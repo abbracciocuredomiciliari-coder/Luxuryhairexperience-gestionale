@@ -10,6 +10,8 @@ export default function PrenotaPage() {
   const [data, setData] = useState(dstr(new Date(Date.now() + 86400000)));
   const [slots, setSlots] = useState<{ ora: string; libera: boolean }[]>([]);
   const [chiuso, setChiuso] = useState(false);
+  const [operatori, setOperatori] = useState<any[]>([]);
+  const [operatore, setOperatore] = useState('');
   const [ora, setOra] = useState('');
   const [dati, setDati] = useState({ firstName: '', lastName: '', email: '', phone: '', note: '', consensoPrivacy: false });
   const [esito, setEsito] = useState<any | null>(null);
@@ -25,15 +27,20 @@ export default function PrenotaPage() {
   useEffect(() => {
     if (!servizio) return;
     setSlots([]); setOra('');
-    api.get('/public/slots', { params: { serviceId: servizio._id, data } })
-      .then(r => { setSlots(r.data.slots || []); setChiuso(!!r.data.chiuso); })
+    api.get('/public/slots', { params: { serviceId: servizio._id, data, operatorId: operatore || undefined } })
+      .then(r => { setSlots(r.data.slots || []); setChiuso(!(r.data.slots || []).length); })
       .catch(() => setSlots([]));
-  }, [servizio, data]);
+  }, [servizio, data, operatore]);
+  useEffect(() => {
+    if (!servizio) { setOperatori([]); return; }
+    api.get('/public/operatori', { params: { reparto: servizio.reparto } })
+      .then(r => setOperatori(r.data || [])).catch(() => setOperatori([]));
+  }, [servizio]);
 
   const prenota = async () => {
     setErr(''); setBusy(true);
     try {
-      const res = await api.post('/public/prenota', { serviceId: servizio._id, data, ora, ...dati });
+      const res = await api.post('/public/prenota', { serviceId: servizio._id, data, ora, operatorId: operatore || undefined, ...dati });
       setEsito(res.data); setStep(4);
     } catch (e: any) {
       setErr(e?.response?.data?.message || 'Prenotazione non riuscita, riprova');
@@ -87,9 +94,15 @@ export default function PrenotaPage() {
         {step === 2 && servizio && (
           <div className="mPanel fade-in">
             <h3>{servizio.nome} · {servizio.durataMinuti} minuti · € {Number(servizio.prezzo).toFixed(2)}</h3>
-            <div className="formgrid" style={{ gridTemplateColumns: '220px 1fr' }}>
+            <div className="formgrid" style={{ gridTemplateColumns: '220px 220px 1fr' }}>
               <div className="field"><span>Giorno</span>
                 <input type="date" min={dstr(new Date())} value={data} onChange={e => setData(e.target.value)} />
+              </div>
+              <div className="field"><span>Professionista</span>
+                <select value={operatore} onChange={e => { setOperatore(e.target.value); setOra(''); }}>
+                  <option value="">Primo disponibile</option>
+                  {operatori.map(o => <option key={o._id} value={o._id}>{o.nome}</option>)}
+                </select>
               </div>
               <div className="field"><span>Orario disponibile</span>
                 {chiuso && <div className="empty"><b>Salone chiuso in questo giorno</b>Scegli un'altra data.</div>}
@@ -141,6 +154,7 @@ export default function PrenotaPage() {
             <h2>✅ Prenotazione registrata</h2>
             <p><strong>{esito.prenotazione.servizio}</strong><br />
               {new Date(esito.prenotazione.data).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })} alle {new Date(esito.prenotazione.data).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+              {esito.prenotazione.operatore && <><br />con <strong>{esito.prenotazione.operatore}</strong></>}
             </p>
             <p className="small">Il salone confermerà l'appuntamento. Con questo link accedi alla tua cartella e puoi seguire o annullare la prenotazione:</p>
             <a className="btn" href={esito.linkCartella} style={{ display: 'inline-block', marginTop: 8 }}>Apri la mia cartella →</a>

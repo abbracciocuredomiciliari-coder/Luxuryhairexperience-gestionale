@@ -3,59 +3,59 @@ import crypto from 'crypto';
 import Client from '../models/Client';
 import Service from '../models/Service';
 import Appointment from '../models/Appointment';
+import Operator from '../models/Operator';
+import { slotOperatore, operatoriReparto, operatoreOccupato } from '../utils/agenda';
 
 const router = Router();
-
-// ── Orari di apertura (configurabili; in futuro per-operatore/giorno) ──
-const ORARI = { apertura: '09:00', chiusura: '19:00', pausaInizio: '13:00', pausaFine: '14:00', passoMinuti: 30 };
-// Giorni chiusi: 0 = domenica
-const GIORNI_CHIUSI = [0];
-
-const toMin = (h: string) => { const [a, b] = h.split(':').map(Number); return a * 60 + b; };
-const toHHMM = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 
 // GET /api/public/services — listino attivo per il sito
 router.get('/services', async (_req, res) => {
   res.json(await Service.find({ attivo: true }).sort({ ordine: 1, nome: 1 }));
 });
 
-// GET /api/public/slots?serviceId=&data=YYYY-MM-DD — fasce libere sul calendario vero
+// GET /api/public/operatori?reparto= — nomi operatori del reparto (solo nome, niente dati interni)
+router.get('/operatori', async (req, res) => {
+  const ops = await operatoriReparto(req.query.reparto as string);
+  res.json(ops.map(o => ({ _id: o._id, nome: o.nome, reparti: o.reparti })));
+});
+
+// GET /api/public/slots?serviceId=&data=&operatorId=
+// Se operatorId: fasce di quell'operatore. Altrimenti: fasce libere su ALMENO
+// un operatore del reparto del servizio (restituisce anche chi è libero).
 router.get('/slots', async (req, res) => {
-  const { serviceId, data } = req.query;
+  const { serviceId, data, operatorId } = req.query as any;
   const service = await Service.findById(serviceId);
   if (!service || !data) return res.status(400).json({ message: 'Servizio e data obbligatori' });
   const giorno = new Date(`${data}T12:00:00`);
   if (isNaN(giorno.getTime())) return res.status(400).json({ message: 'Data non valida' });
-  if (GIORNI_CHIUSI.includes(giorno.getDay())) return res.json({ data, slots: [], chiuso: true });
 
-  // Appuntamenti già occupati quel giorno
-  const start = new Date(`${data}T00:00:00`);
-  const end = new Date(`${data}T23:59:59.999`);
-  const occupati = await Appointment.find({ data: { $gte: start, $lte: end }, stato: { $nin: ['annullato', 'no_show'] } });
-
-  const durata = service.durataMinuti;
-  const apertura = toMin(ORARI.apertura), chiusura = toMin(ORARI.chiusura);
-  const pausaA = toMin(ORARI.pausaInizio), pausaB = toMin(ORARI.pausaFine);
-  const oggi = new Date();
-  const slots: { ora: string; libera: boolean }[] = [];
-
-  for (let m = apertura; m + durata <= chiusura; m += ORARI.passoMinuti) {
-    const inizio = new Date(`${data}T${toHHMM(m)}:00`);
-    const fine = new Date(inizio.getTime() + durata * 60000);
-    // Nel passato → non prenotabile
-    if (inizio <= oggi) continue;
-    // Sborda nella pausa → non prenotabile
-    if (m < pausaB && m + durata > pausaA) continue;
-    // Sovrapposizione con appuntamenti esistenti
-    const conflitto = occupati.some(a => a.data < fine && a.fine > inizio);
-    slots.push({ ora: toHHMM(m), libera: !conflitto });
+  let ops: any[];
+  if (operatorId) {
+    const o = await Operator.findById(operatorId);
+    ops = o && o.attivo ? [o] : [];
+  } else {
+    ops = await operatoriReparto(service.reparto);
   }
-  res.json({ data, durata, slots });
+  if (!ops.length) return res.json({ data, slots: [], operatori: [] });
+
+  const perOperatore: Record<string, { ora: string; libera: boolean }[]> = {};
+  for (const o of ops) perOperatore[String(o._id)] = await slotOperatore(o, data, service.durataMinuti);
+
+  // Unione delle fasce: libera se almeno un operatore è libero
+  const orari = new Set<string>();
+  Object.values(perOperatore).forEach(list => list.forEach(s => orari.add(s.ora)));
+  const slots = [...orari].sort().map(ora => ({
+    ora,
+    libera: ops.some(o => perOperatore[String(o._id)]?.find(s => s.ora === ora)?.libera),
+    operatori: ops.filter(o => perOperatore[String(o._id)]?.find(s => s.ora === ora)?.libera).map(o => String(o._id)),
+  }));
+  res.json({ data, durata: service.durataMinuti, slots });
 });
 
-// POST /api/public/prenota — prenotazione dal sito: crea/trova cliente + appuntamento
+// POST /api/public/prenota — prenotazione dal sito.
+// Se non è scelto l'operatore, assegna il primo libero del reparto.
 router.post('/prenota', async (req, res) => {
-  const { serviceId, data, ora, firstName, lastName, email, phone, note, consensoPrivacy } = req.body || {};
+  const { serviceId, data, ora, operatorId, firstName, lastName, email, phone, note, consensoPrivacy } = req.body || {};
   if (!serviceId || !data || !ora || !firstName || !email) {
     return res.status(400).json({ message: 'Servizio, data, ora, nome ed email obbligatori' });
   }
@@ -67,14 +67,22 @@ router.post('/prenota', async (req, res) => {
   if (inizio <= new Date()) return res.status(400).json({ message: 'La fascia scelta è nel passato' });
   const fine = new Date(inizio.getTime() + service.durataMinuti * 60000);
 
-  // Verifica concorrente: la fascia deve essere ancora libera
-  const conflitto = await Appointment.findOne({
-    stato: { $nin: ['annullato', 'no_show'] },
-    data: { $lt: fine }, fine: { $gt: inizio },
-  });
-  if (conflitto) return res.status(409).json({ message: 'La fascia è appena stata occupata: scegline un\'altra' });
+  // Scelta operatore: richiesto oppure primo libero del reparto
+  let operatore: any = null;
+  if (operatorId) {
+    operatore = await Operator.findById(operatorId);
+    if (!operatore) return res.status(404).json({ message: 'Operatore non trovato' });
+    if (await operatoreOccupato(operatore._id, inizio, fine)) {
+      return res.status(409).json({ message: `${operatore.nome} è già impegnato in quella fascia` });
+    }
+  } else {
+    const ops = await operatoriReparto(service.reparto);
+    for (const o of ops) {
+      if (!(await operatoreOccupato(o._id, inizio, fine))) { operatore = o; break; }
+    }
+    if (!operatore) return res.status(409).json({ message: 'La fascia è appena stata occupata: scegline un\'altra' });
+  }
 
-  // Trova o crea la cartella cliente (chiave: email)
   const mail = String(email).toLowerCase().trim();
   let client = await Client.findOne({ email: mail });
   if (!client) {
@@ -89,11 +97,11 @@ router.post('/prenota', async (req, res) => {
   }
 
   const app = await Appointment.create({
-    client: client._id, service: service._id,
-    data: inizio, fine, origine: 'sito', note: note || '', prezzo: service.prezzo,
+    client: client._id, service: service._id, operator: operatore._id,
+    reparto: service.reparto, data: inizio, fine, origine: 'sito',
+    note: note || '', prezzo: service.prezzo,
   });
 
-  // Link magico della cartella (in futuro inviato via email)
   if (!client.accessToken || !client.accessTokenScade || client.accessTokenScade < new Date()) {
     client.accessToken = crypto.randomBytes(24).toString('hex');
     client.accessTokenScade = new Date(Date.now() + 30 * 24 * 3600 * 1000);
@@ -104,6 +112,7 @@ router.post('/prenota', async (req, res) => {
     prenotazione: {
       id: String(app._id),
       servizio: service.nome,
+      operatore: operatore.nome,
       data: inizio,
       fine,
       prezzo: app.prezzo,
@@ -124,6 +133,7 @@ router.get('/cartella', async (req, res) => {
   }
   const appuntamenti = await Appointment.find({ client: client._id })
     .populate('service', 'nome categoria durataMinuti prezzo')
+    .populate('operator', 'nome')
     .sort({ data: -1 });
   res.json({
     cliente: { firstName: client.firstName, lastName: client.lastName, email: client.email },
@@ -131,7 +141,7 @@ router.get('/cartella', async (req, res) => {
   });
 });
 
-// POST /api/public/cartella/annulla — il cliente annulla un suo appuntamento futuro
+// POST /api/public/cartella/annulla — annulla appuntamento futuro (libera la fascia)
 router.post('/cartella/annulla', async (req, res) => {
   const { t, appointmentId } = req.body || {};
   const client = await Client.findOne({ accessToken: t || '' });
@@ -146,13 +156,11 @@ router.post('/cartella/annulla', async (req, res) => {
   res.json({ message: 'Appuntamento annullato' });
 });
 
-// POST /api/public/accesso-cartella — richiesta link per email (da collegare a SMTP)
+// POST /api/public/accesso-cartella — richiesta link per email (SMTP da collegare)
 router.post('/accesso-cartella', async (req, res) => {
-  const { email } = req.body || {};
-  const mail = String(email || '').toLowerCase().trim();
+  const mail = String(req.body?.email || '').toLowerCase().trim();
   if (!mail) return res.status(400).json({ message: 'Inserisci la tua email' });
   const client = await Client.findOne({ email: mail });
-  // Risposta uniforme: non rivela se l'email esiste
   if (!client) return res.json({ message: 'Se l\'email corrisponde a una cartella, riceverai il link di accesso.' });
   client.accessToken = crypto.randomBytes(24).toString('hex');
   client.accessTokenScade = new Date(Date.now() + 30 * 24 * 3600 * 1000);
@@ -161,7 +169,6 @@ router.post('/accesso-cartella', async (req, res) => {
   const base = process.env.PUBLIC_SITE_URL || 'http://localhost:5173';
   res.json({
     message: 'Se l\'email corrisponde a una cartella, riceverai il link di accesso.',
-    // In attesa di SMTP restituiamo il link (solo per collaudo — rimuovere in produzione con email attiva)
     linkCollaudo: `${base}/cartella?t=${client.accessToken}`,
   });
 });

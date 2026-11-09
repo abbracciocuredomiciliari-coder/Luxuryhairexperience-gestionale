@@ -5,7 +5,9 @@ import mongoose from 'mongoose';
 const appointmentSchema = new mongoose.Schema({
   client: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true },
   service: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', required: true },
-  operatore: { type: String, default: '' },         // nome operatore/sedia (testo libero in fase 1)
+  operator: { type: mongoose.Schema.Types.ObjectId, ref: 'Operator' },  // assegnazione reale
+  reparto: { type: String, enum: ['parrucchiere', 'estetica', 'unghie', 'altro'], default: 'parrucchiere' },
+  operatore: { type: String, default: '' },         // nome libero se senza operatore schedulato
   data: { type: Date, required: true },             // data/ora di inizio
   fine: { type: Date, required: true },             // data/ora di fine calcolata
   stato: {

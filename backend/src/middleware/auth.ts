@@ -30,6 +30,14 @@ export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction
   next();
 }
 
+// Ruoli ammessi: admin accede sempre; gli altri solo se nella lista.
+export function requireRole(...roles: string[]) {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
+    if (req.userRole === 'admin' || roles.includes(req.userRole || '')) return next();
+    return res.status(403).json({ message: 'Ruolo non autorizzato' });
+  };
+}
+
 // Token clienti (link magico cartella) — solo accesso alla propria cartella
 export function requireClient(req: AuthRequest, res: Response, next: NextFunction) {
   const header = req.headers.authorization || '';

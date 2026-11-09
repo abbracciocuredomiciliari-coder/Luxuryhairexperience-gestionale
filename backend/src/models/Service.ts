@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 const serviceSchema = new mongoose.Schema({
   nome: { type: String, required: true },
   categoria: { type: String, default: 'Capelli' },
+  reparto: { type: String, enum: ['parrucchiere', 'estetica', 'unghie', 'abbigliamento', 'altro'], default: 'parrucchiere' },
   durataMinuti: { type: Number, required: true, default: 60 },
   prezzo: { type: Number, required: true, default: 0 },
   descrizione: { type: String, default: '' },
