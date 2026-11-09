@@ -34,7 +34,12 @@ export default function CartellaPubblica() {
     <div className="site-shell">
       <header className="site-header">
         <div className="logo">LUXURY HAIR EXPERIENCE</div>
-        <Link to="/" style={{ fontSize: 11, color: '#a8c7b8' }}>← Prenota</Link>
+        <nav className="site-nav">
+          <Link to="/">Prenota</Link>
+          <Link to="/shop">Shop</Link>
+          <Link to="/cartella" className="on">La mia cartella</Link>
+          <Link to="/gestionale/login" style={{ fontSize: 11, color: '#a8c7b8' }}>Area riservata</Link>
+        </nav>
       </header>
       <div className="site-wrap" style={{ maxWidth: 720 }}>
         {err && <div className="mPanel"><div className="err">{err}</div><p className="small mt">Richiedi un nuovo link di accesso dalla <Link to="/" style={{ color: 'var(--forest)', fontWeight: 700 }}>pagina prenotazioni</Link>.</p></div>}
@@ -60,6 +65,23 @@ export default function CartellaPubblica() {
                 </div>
               ))}
             </div>
+
+            {!!data.ordini?.length && (
+              <div className="mPanel">
+                <h3>I miei ordini</h3>
+                {data.ordini.map((o: any) => (
+                  <div key={o._id} className="row" style={{ padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
+                    <div className="grow">
+                      <strong>Ordine n. {o.numero}</strong> <span className="small">— € {(o.totaleCent / 100).toFixed(2)} · {o.consegna === 'ritiro' ? 'ritiro in salone' : 'consegna domicilio'}</span><br />
+                      <span className="small">{o.righe.map((r: any) => `${r.quantita}× ${r.descrizione}`).join(', ')}</span>
+                    </div>
+                    <span className={`tag ${o.stato === 'annullato' ? 'off' : o.stato === 'inserito' ? 'wait' : ''}`}>
+                      {{ inserito: 'Ricevuto', preparazione: 'In preparazione', consegnato: 'Consegnato', annullato: 'Annullato' }[o.stato as string] || o.stato}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="mPanel">
               <h3>Storico</h3>

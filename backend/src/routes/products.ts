@@ -11,16 +11,25 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const { nome, categoria, prezzoCent, giacenza, giacenzaMinima, note } = req.body || {};
+  const { nome, categoria, descrizione, prezzoCent, giacenza, giacenzaMinima, vendibileOnline, immagine, note } = req.body || {};
   if (!nome) return res.status(400).json({ message: 'Nome obbligatorio' });
-  const p = await Product.create({ nome, categoria, prezzoCent, giacenza, giacenzaMinima, note });
+  if (immagine?.dati && Buffer.from(immagine.dati, 'base64').length > 300 * 1024) {
+    return res.status(400).json({ message: 'Immagine troppo grande (max 300 KB)' });
+  }
+  const p = await Product.create({ nome, categoria, descrizione, prezzoCent, giacenza, giacenzaMinima, vendibileOnline, immagine, note });
   res.status(201).json(p);
 });
 
 router.put('/:id', async (req, res) => {
-  const allowed = ['nome', 'categoria', 'prezzoCent', 'giacenzaMinima', 'attivo', 'note'];
+  const allowed = ['nome', 'categoria', 'descrizione', 'prezzoCent', 'giacenzaMinima', 'attivo', 'vendibileOnline', 'note'];
   const update: any = {};
   allowed.forEach(k => { if (req.body[k] !== undefined) update[k] = req.body[k]; });
+  if (req.body.immagine !== undefined) {
+    if (req.body.immagine?.dati && Buffer.from(req.body.immagine.dati, 'base64').length > 300 * 1024) {
+      return res.status(400).json({ message: 'Immagine troppo grande (max 300 KB)' });
+    }
+    update.immagine = req.body.immagine;
+  }
   const p = await Product.findByIdAndUpdate(req.params.id, update, { new: true });
   if (!p) return res.status(404).json({ message: 'Articolo non trovato' });
   res.json(p);

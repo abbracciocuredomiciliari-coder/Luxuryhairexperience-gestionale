@@ -16,6 +16,7 @@ import Commercialista from './pages/Commercialista';
 import Operatori from './pages/Operatori';
 import PrenotaPage from './pages/PrenotaPage';
 import CartellaPubblica from './pages/CartellaPubblica';
+import Shop from './pages/Shop';
 
 const NAV: { sez?: string; to?: string; label?: string; icon?: string; soloAdmin?: boolean }[] = [
   { sez: 'Salone' },
@@ -90,6 +91,7 @@ export default function App() {
       {/* Sito pubblico: prenotazioni + cartella cliente */}
       <Route path="/" element={<PrenotaPage />} />
       <Route path="/prenota" element={<PrenotaPage />} />
+      <Route path="/shop" element={<Shop />} />
       <Route path="/cartella" element={<CartellaPubblica />} />
 
       {/* Gestionale riservato */}

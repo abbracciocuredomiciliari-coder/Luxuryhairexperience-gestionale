@@ -16,10 +16,15 @@ export default function Dashboard() {
   const [clienti, setClienti] = useState(0);
   const [settimana, setSettimana] = useState(0);
   const [daConfermare, setDaConfermare] = useState(0);
+  const [ordiniAperti, setOrdiniAperti] = useState(0);
+  const [scorte, setScorte] = useState(0);
 
   useEffect(() => {
     api.get('/appointments/today').then(r => setOggi(r.data || [])).catch(() => {});
     api.get('/clients').then(r => setClienti((r.data || []).length)).catch(() => {});
+    api.get('/orders', { params: { stato: 'inserito' } }).then(r => setOrdiniAperti((r.data || []).length)).catch(() => {});
+    api.get('/products', { params: { attivi: '1' } }).then(r =>
+      setScorte((r.data || []).filter((p: any) => p.giacenzaMinima > 0 && p.giacenza <= p.giacenzaMinima).length)).catch(() => {});
     const from = new Date().toISOString().slice(0, 10);
     const to = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
     api.get('/appointments', { params: { from, to } }).then(r => {
@@ -35,7 +40,9 @@ export default function Dashboard() {
         <div className="stat"><span className="small">APPUNTAMENTI OGGI</span><strong>{oggi.length}</strong></div>
         <div className="stat"><span className="small">PROSSIMI 7 GIORNI</span><strong>{settimana}</strong></div>
         <div className="stat"><span className="small">DA CONFERMARE</span><strong>{daConfermare}</strong></div>
+        <div className="stat"><span className="small">ORDINI DA GESTIRE</span><strong>{ordiniAperti}</strong></div>
         <div className="stat"><span className="small">CARTELLE CLIENTI</span><strong>{clienti}</strong></div>
+        <div className="stat"><span className="small">SOTTO SCORTA</span><strong>{scorte}</strong></div>
       </div>
 
       <div className="twocol">
@@ -56,7 +63,10 @@ export default function Dashboard() {
           <div style={{ display: 'grid', gap: 10 }}>
             <Link to="/gestionale/agenda"><button className="btn" style={{ width: '100%' }}>＋ Nuovo appuntamento</button></Link>
             <Link to="/gestionale/clienti"><button className="btn alt" style={{ width: '100%' }}>✦ Nuova cartella cliente</button></Link>
+            <Link to="/gestionale/ordini"><button className="btn alt" style={{ width: '100%' }}>☰ Gestisci ordini shop</button></Link>
+            <Link to="/gestionale/cassa"><button className="btn alt" style={{ width: '100%' }}>▤ Apri cassa</button></Link>
             <a href="/" target="_blank" rel="noreferrer"><button className="btn alt" style={{ width: '100%' }}>◈ Vedi il sito prenotazioni</button></a>
+            <a href="/shop" target="_blank" rel="noreferrer"><button className="btn alt" style={{ width: '100%' }}>✿ Vedi lo shop online</button></a>
           </div>
           <p className="small mt">Le prenotazioni fatte dai clienti sul sito entrano direttamente in agenda con stato «da confermare».</p>
         </div>

@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
 // POST /api/orders — ordine multiriga con scarico scorte atomico + compensazione.
 // NOTA: non crea incasso automatico — il pagamento si registra quando avviene.
 router.post('/', async (req, res) => {
-  const { righe, clientId, clienteLibero, note } = req.body || {};
+  const { righe, clientId, clienteLibero, email, telefono, consegna, indirizzo, note } = req.body || {};
   if (!Array.isArray(righe) || !righe.length) return res.status(400).json({ message: 'Righe obbligatorie' });
   const scaricate: any[] = [];
   try {
@@ -36,6 +36,10 @@ router.post('/', async (req, res) => {
       numero: (ultimo?.numero || 0) + 1,
       client: clientId || undefined,
       clienteLibero: clienteLibero || '',
+      email: email || '', telefono: telefono || '',
+      origine: 'negozio',
+      consegna: consegna === 'domicilio' ? 'domicilio' : 'ritiro',
+      indirizzo: consegna === 'domicilio' ? (indirizzo || '') : '',
       righe, totaleCent: righe.reduce((s: number, r: any) => s + r.prezzoCent * r.quantita, 0),
       note: note || '',
     });

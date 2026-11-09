@@ -4,6 +4,8 @@ import Client from '../models/Client';
 import Service from '../models/Service';
 import Appointment from '../models/Appointment';
 import Operator from '../models/Operator';
+import Product from '../models/Product';
+import Order from '../models/Order';
 import { slotOperatore, operatoriReparto, operatoreOccupato } from '../utils/agenda';
 
 const router = Router();
@@ -135,9 +137,11 @@ router.get('/cartella', async (req, res) => {
     .populate('service', 'nome categoria durataMinuti prezzo')
     .populate('operator', 'nome')
     .sort({ data: -1 });
+  const ordini = await Order.find({ client: client._id }).sort({ createdAt: -1 }).limit(50);
   res.json({
     cliente: { firstName: client.firstName, lastName: client.lastName, email: client.email },
     appuntamenti,
+    ordini,
   });
 });
 
@@ -154,6 +158,95 @@ router.post('/cartella/annulla', async (req, res) => {
   app.stato = 'annullato';
   await app.save();
   res.json({ message: 'Appuntamento annullato' });
+});
+
+// ── Shop online ──────────────────────────────────────────────────
+
+// GET /api/public/shop — articoli vendibili online (solo dati vetrina)
+router.get('/shop', async (_req, res) => {
+  const prodotti = await Product.find({ attivo: true, vendibileOnline: true })
+    .select('nome categoria descrizione prezzoCent giacenza immagine')
+    .sort({ categoria: 1, nome: 1 });
+  res.json(prodotti.map(p => ({
+    _id: p._id, nome: p.nome, categoria: p.categoria, descrizione: p.descrizione,
+    prezzoCent: p.prezzoCent, disponibile: p.giacenza > 0,
+    immagine: p.immagine?.dati ? `data:${p.immagine.tipo};base64,${p.immagine.dati}` : '',
+  })));
+});
+
+// POST /api/public/shop/ordine — ordine online: scarico scorte atomico,
+// nessun pagamento online (ritiro/consegna, pagamento alla consegna o in negozio)
+router.post('/shop/ordine', async (req, res) => {
+  const { righe, firstName, lastName, email, phone, consegna, indirizzo, note } = req.body || {};
+  if (!Array.isArray(righe) || !righe.length) return res.status(400).json({ message: 'Carrello vuoto' });
+  if (!firstName || !email) return res.status(400).json({ message: 'Nome ed email obbligatori' });
+
+  // Scarico scorte atomico riga per riga; solo articoli vendibili online
+  const scaricate: any[] = [];
+  const righeOk: any[] = [];
+  try {
+    for (const r of righe) {
+      const p = await Product.findOneAndUpdate(
+        { _id: r.productId, attivo: true, vendibileOnline: true, giacenza: { $gte: r.quantita } },
+        { $inc: { giacenza: -r.quantita } }, { new: true },
+      );
+      if (!p) {
+        const esiste = await Product.findById(r.productId);
+        throw Object.assign(new Error(
+          !esiste ? 'Articolo non disponibile'
+            : esiste.giacenza < r.quantita ? `Disponibilità esaurita: ${esiste.nome} (rimasti ${esiste.giacenza})`
+            : `${esiste.nome} non è vendibile online`), { status: 409 });
+      }
+      scaricate.push({ productId: p._id, quantita: r.quantita });
+      righeOk.push({ product: p._id, descrizione: p.nome, quantita: r.quantita, prezzoCent: p.prezzoCent });
+    }
+    const mail = String(email).toLowerCase().trim();
+    const client = await Client.findOne({ email: mail })
+      || await Client.create({ firstName, lastName: lastName || '', email: mail, phone: phone || '', consensoPrivacy: true, consensoPrivacyIl: new Date() });
+
+    const ultimo = await Order.findOne().sort({ numero: -1 });
+    const order = await Order.create({
+      numero: (ultimo?.numero || 0) + 1,
+      client: client._id,
+      clienteLibero: `${firstName} ${lastName || ''}`.trim(),
+      email: mail, telefono: phone || '',
+      origine: 'sito',
+      consegna: consegna === 'domicilio' ? 'domicilio' : 'ritiro',
+      indirizzo: consegna === 'domicilio' ? (indirizzo || '') : '',
+      righe: righeOk,
+      totaleCent: righeOk.reduce((s, r) => s + r.prezzoCent * r.quantita, 0),
+      note: note || '',
+    });
+    res.status(201).json({
+      ordine: {
+        numero: order.numero,
+        totaleCent: order.totaleCent,
+        consegna: order.consegna,
+        stato: order.stato,
+      },
+      messaggio: order.consegna === 'ritiro'
+        ? 'Ordine registrato. Ti avvisiamo quando è pronto per il ritiro in salone.'
+        : 'Ordine registrato. Ti contatteremo per concordare la consegna.',
+    });
+  } catch (e: any) {
+    for (const s of scaricate) {
+      await Product.findByIdAndUpdate(s.productId, { $inc: { giacenza: s.quantita } }).catch(() => {});
+    }
+    res.status(e.status || 500).json({ message: e.message });
+  }
+});
+
+// GET /api/public/shop/ordine/:numero?email= — stato ordine pubblico (solo con email verificata)
+router.get('/shop/ordine/:numero', async (req, res) => {
+  const email = String(req.query.email || '').toLowerCase().trim();
+  const order = await Order.findOne({ numero: Number(req.params.numero), email });
+  if (!order) return res.status(404).json({ message: 'Ordine non trovato. Controlla numero ed email.' });
+  res.json({
+    numero: order.numero, stato: order.stato, consegna: order.consegna,
+    totaleCent: order.totaleCent, pagato: order.pagato,
+    righe: order.righe.map(r => ({ descrizione: r.descrizione, quantita: r.quantita, prezzoCent: r.prezzoCent })),
+    createdAt: order.createdAt,
+  });
 });
 
 // POST /api/public/accesso-cartella — richiesta link per email (SMTP da collegare)

@@ -85,13 +85,16 @@ export default function Ordini() {
       )}
 
       <table className="tbl">
-        <thead><tr><th>N.</th><th>Data</th><th>Cliente</th><th>Articoli</th><th className="r">Totale</th><th>Stato</th><th>Incasso</th><th /></tr></thead>
+        <thead><tr><th>N.</th><th>Data</th><th>Cliente</th><th>Origine</th><th>Consegna</th><th>Articoli</th><th className="r">Totale</th><th>Stato</th><th>Incasso</th><th /></tr></thead>
         <tbody>
           {ordini.map(o => (
             <tr key={o._id} className={o.stato === 'annullato' ? 'stornata' : ''}>
               <td>{o.numero}</td>
               <td>{new Date(o.createdAt).toLocaleDateString('it-IT')}</td>
-              <td>{o.client ? `${o.client.firstName} ${o.client.lastName}` : o.clienteLibero || '—'}</td>
+              <td>{o.client ? `${o.client.firstName} ${o.client.lastName}` : o.clienteLibero || '—'}
+                {o.email && <><br /><small className="muted">{o.email}{o.telefono ? ` · ${o.telefono}` : ''}</small></>}</td>
+              <td>{o.origine === 'sito' ? <span className="tag">🛍 sito</span> : <span className="tag alt">negozio</span>}</td>
+              <td>{o.consegna === 'domicilio' ? <>🏠 {o.indirizzo || 'domicilio'}</> : 'ritiro'}</td>
               <td>{o.righe.map((r: any) => `${r.quantita}× ${r.descrizione}`).join(', ')}</td>
               <td className="r">{euro(o.totaleCent)}</td>
               <td><span className={`tag ${STATI[o.stato]?.c || ''}`}>{STATI[o.stato]?.t || o.stato}</span></td>
@@ -104,7 +107,7 @@ export default function Ordini() {
               </td>
             </tr>
           ))}
-          {!ordini.length && <tr><td colSpan={8} className="muted">Nessun ordine.</td></tr>}
+          {!ordini.length && <tr><td colSpan={10} className="muted">Nessun ordine.</td></tr>}
         </tbody>
       </table>
     </div>

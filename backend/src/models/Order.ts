@@ -7,6 +7,11 @@ const orderSchema = new mongoose.Schema({
   numero: { type: Number, required: true },
   client: { type: mongoose.Schema.Types.ObjectId, ref: 'Client' },
   clienteLibero: { type: String, default: '' },       // nome se senza cartella
+  email: { type: String, default: '' },
+  telefono: { type: String, default: '' },
+  origine: { type: String, enum: ['negozio', 'sito'], default: 'negozio' },
+  consegna: { type: String, enum: ['ritiro', 'domicilio'], default: 'ritiro' },
+  indirizzo: { type: String, default: '' },           // se consegna a domicilio
   righe: [{
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
     descrizione: { type: String, required: true },

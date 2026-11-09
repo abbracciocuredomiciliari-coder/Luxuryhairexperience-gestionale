@@ -62,7 +62,12 @@ export default function PrenotaPage() {
     <div className="site-shell">
       <header className="site-header">
         <div className="logo">LUXURY HAIR EXPERIENCE</div>
-        <a href="/gestionale/login" style={{ fontSize: 11, color: '#a8c7b8' }}>Area riservata</a>
+        <nav className="site-nav">
+          <a href="/" className="on">Prenota</a>
+          <a href="/shop">Shop</a>
+          <a href="/cartella">La mia cartella</a>
+          <a href="/gestionale/login" style={{ fontSize: 11, color: '#a8c7b8' }}>Area riservata</a>
+        </nav>
       </header>
 
       <div className="site-hero">

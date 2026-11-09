@@ -74,16 +74,21 @@ async function seed() {
 
   // ── Prodotti boutique dimostrativi ──
   const prodotti = [
-    { nome: 'Shampoo ristrutturante 250ml', categoria: 'Haircare', prezzoCent: 2400, giacenza: 12, giacenzaMinima: 3 },
-    { nome: 'Maschera nutriente 200ml', categoria: 'Haircare', prezzoCent: 2900, giacenza: 8, giacenzaMinima: 3 },
-    { nome: 'Olio per capelli 50ml', categoria: 'Haircare', prezzoCent: 3200, giacenza: 6, giacenzaMinima: 2 },
-    { nome: 'Crema corpo setificante', categoria: 'Bodycare', prezzoCent: 2700, giacenza: 10, giacenzaMinima: 3 },
-    { nome: 'Smalto nude', categoria: 'Unghie', prezzoCent: 1200, giacenza: 15, giacenzaMinima: 5 },
-    { nome: 'Borsa shopper Luxury', categoria: 'Accessori', prezzoCent: 1900, giacenza: 20, giacenzaMinima: 5 },
+    { nome: 'Shampoo ristrutturante 250ml', categoria: 'Haircare', prezzoCent: 2400, giacenza: 12, giacenzaMinima: 3, vendibileOnline: true, descrizione: 'Deterge e ripara i capelli trattati' },
+    { nome: 'Maschera nutriente 200ml', categoria: 'Haircare', prezzoCent: 2900, giacenza: 8, giacenzaMinima: 3, vendibileOnline: true, descrizione: 'Nutrimento profondo per capelli secchi' },
+    { nome: 'Olio per capelli 50ml', categoria: 'Haircare', prezzoCent: 3200, giacenza: 6, giacenzaMinima: 2, vendibileOnline: true, descrizione: 'Lucentezza setosa, effetto anticrespo' },
+    { nome: 'Crema corpo setificante', categoria: 'Bodycare', prezzoCent: 2700, giacenza: 10, giacenzaMinima: 3, vendibileOnline: true },
+    { nome: 'Smalto nude', categoria: 'Unghie', prezzoCent: 1200, giacenza: 15, giacenzaMinima: 5, vendibileOnline: true },
+    { nome: 'Borsa shopper Luxury', categoria: 'Accessori', prezzoCent: 1900, giacenza: 20, giacenzaMinima: 5, vendibileOnline: true, descrizione: 'Shopper in cotone con logo ricamato' },
+    { nome: 'Camicia seta salvia', categoria: 'Abbigliamento', prezzoCent: 8900, giacenza: 4, giacenzaMinima: 1, vendibileOnline: true, descrizione: 'Camicia in seta color salvia, taglio morbido' },
+    { nome: 'Sciarpa cashmere', categoria: 'Abbigliamento', prezzoCent: 6500, giacenza: 6, giacenzaMinima: 1, vendibileOnline: true, descrizione: 'Sciarpa in cashmere tinta naturale' },
   ];
   for (const p of prodotti) {
     const exists = await Product.findOne({ nome: p.nome });
     if (!exists) await Product.create(p);
+    else if (p.vendibileOnline !== undefined || p.descrizione !== undefined) {
+      await Product.findByIdAndUpdate(exists._id, { vendibileOnline: p.vendibileOnline, descrizione: p.descrizione });
+    }
   }
   console.log(`Prodotti boutique: ${await Product.countDocuments()}`);
 

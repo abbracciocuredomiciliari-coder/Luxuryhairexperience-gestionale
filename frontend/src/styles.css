@@ -218,6 +218,27 @@ td strong { color: var(--ink); }
 .servizio-card .prezzo { font-size: 18px; font-weight: 650; color: #214e3d; margin-top: 8px; }
 .confirm-box { background: var(--sage); border: 1px solid #cfe0c5; border-radius: 12px; padding: 26px; text-align: center; }
 
+/* Nav sito pubblico */
+.site-nav { display: flex; gap: 18px; align-items: center; }
+.site-nav a { font-size: 12px; font-weight: 600; color: #c0d6cb; }
+.site-nav a.on, .site-nav a:hover { color: #e0edda; }
+
+/* Shop online */
+.carrello-bar {
+  position: sticky; top: 64px; z-index: 5; display: flex; justify-content: space-between;
+  align-items: center; background: var(--sidebar-bg); color: #e0edda;
+  border-radius: 10px; padding: 10px 16px; margin-bottom: 18px; font-size: 13px; font-weight: 600;
+}
+.shop-card { display: flex; flex-direction: column; }
+.shop-img {
+  width: 100%; height: 130px; object-fit: cover; border-radius: 8px;
+  margin-bottom: 10px; background: var(--sage);
+}
+.shop-img.placeholder {
+  display: grid; place-items: center; font-size: 30px; color: #a8c7b8;
+}
+.tbl tfoot td { border-top: 2px solid var(--line); padding: 10px 8px; font-size: 13px; }
+
 /* ── Utilità ── */
 .fade-in { animation: fadeIn .3s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } }
