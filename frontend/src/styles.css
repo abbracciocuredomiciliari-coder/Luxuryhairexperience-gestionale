@@ -47,8 +47,11 @@ h3 { margin: 0; }
 .sidebar {
   width: 248px; position: sticky; top: 0; height: 100vh;
   background: var(--sidebar-bg); color: white;
-  padding: 30px 18px; display: flex; flex-direction: column; flex-shrink: 0;
+  padding: 30px 18px 20px; display: flex; flex-direction: column; flex-shrink: 0;
 }
+.sidebar .links { flex: 1; min-height: 0; overflow-y: auto; margin: 0 -6px; padding: 0 6px; scrollbar-width: thin; scrollbar-color: #ffffff30 transparent; }
+.sidebar .links::-webkit-scrollbar { width: 5px; }
+.sidebar .links::-webkit-scrollbar-thumb { background: #ffffff25; border-radius: 4px; }
 .brandmark {
   font-family: Georgia, serif; font-size: 33px; letter-spacing: -8px;
   color: #d3e3bb; border: 1px solid #ffffff38; border-radius: 50%;
@@ -57,11 +60,11 @@ h3 { margin: 0; }
 }
 .sidebar .logo { letter-spacing: 2px; font-size: 16px; margin: 0 12px; line-height: 1.7; font-weight: 800; }
 .sidebar .logo span { display: block; font-size: 10px; letter-spacing: 4px; color: #a8c7b8; font-weight: 400; }
-.studio { font-size: 9px; letter-spacing: 1.6px; color: #8eafa1; margin: 32px 12px 14px; text-transform: uppercase; }
+.studio { font-size: 9px; letter-spacing: 1.6px; color: #8eafa1; margin: 24px 12px 10px; text-transform: uppercase; }
 .navbtn {
   display: flex; gap: 12px; align-items: center; width: 100%; text-align: left;
   border: 0; background: transparent; color: var(--sidebar-text);
-  font-size: 12px; font-weight: 500; padding: 13px 14px; margin: 3px 0;
+  font-size: 12px; font-weight: 500; padding: 10px 14px; margin: 3px 0;
   border-radius: 10px;
 }
 .navbtn.active { background: var(--sage); color: var(--sage-text); font-weight: 750; }
@@ -228,7 +231,7 @@ td strong { color: var(--ink); }
 /* ── Nuove sezioni: cassa/negozio/admin ── */
 .navsez {
   font-size: 9px; letter-spacing: 1.6px; color: var(--sidebar-label);
-  text-transform: uppercase; margin: 18px 12px 4px;
+  text-transform: uppercase; margin: 14px 12px 4px;
 }
 .seg { display: inline-flex; background: white; border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
 .seg button {
