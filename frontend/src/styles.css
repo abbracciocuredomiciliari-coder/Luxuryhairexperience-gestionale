@@ -1,0 +1,242 @@
+/* ═══════════════════════════════════════════════════════════════
+   LUXURY HAIR EXPERIENCE — identità visiva
+   Palette e stile estratti dal gestionale demo (luxury.html)
+   ═══════════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;750;800&display=swap');
+
+:root {
+  --ink: #233a31;
+  --forest: #174c3c;
+  --green: #26715a;
+  --line: #e0e9e3;
+  --muted: #73847a;
+  --cream: #f4f7f3;
+  --sage: #e0edda;
+  --sage-text: #1c4939;
+  --sidebar-bg: #173e32;
+  --sidebar-text: #c0d6cb;
+  --sidebar-label: #93b5a3;
+  --tag-bg: #edf4e5;
+  --tag-color: #557e38;
+  --wait-bg: #faf1dc;
+  --wait-color: #97773c;
+  --off-bg: #f4eae7;
+  --off-color: #a76754;
+  --danger: #9c4836;
+  --danger-bg: #fff1ed;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, Arial;
+  font-size: 15px;
+  background: var(--cream);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+a { text-decoration: none; color: inherit; }
+h1 { font-size: 29px; letter-spacing: -1px; margin: 9px 0 0; font-weight: 650; }
+h2 { font-size: 20px; font-weight: 650; }
+h3 { margin: 0; }
+
+/* ── Shell gestionale ── */
+.management { display: flex; min-height: 100vh; background: var(--cream); color: var(--ink); }
+.sidebar {
+  width: 248px; position: sticky; top: 0; height: 100vh;
+  background: var(--sidebar-bg); color: white;
+  padding: 30px 18px; display: flex; flex-direction: column; flex-shrink: 0;
+}
+.brandmark {
+  font-family: Georgia, serif; font-size: 33px; letter-spacing: -8px;
+  color: #d3e3bb; border: 1px solid #ffffff38; border-radius: 50%;
+  width: 55px; height: 55px; line-height: 53px; text-align: center;
+  padding-right: 7px; margin: 0 12px 18px;
+}
+.sidebar .logo { letter-spacing: 2px; font-size: 16px; margin: 0 12px; line-height: 1.7; font-weight: 800; }
+.sidebar .logo span { display: block; font-size: 10px; letter-spacing: 4px; color: #a8c7b8; font-weight: 400; }
+.studio { font-size: 9px; letter-spacing: 1.6px; color: #8eafa1; margin: 32px 12px 14px; text-transform: uppercase; }
+.navbtn {
+  display: flex; gap: 12px; align-items: center; width: 100%; text-align: left;
+  border: 0; background: transparent; color: var(--sidebar-text);
+  font-size: 12px; font-weight: 500; padding: 13px 14px; margin: 3px 0;
+  border-radius: 10px;
+}
+.navbtn.active { background: var(--sage); color: var(--sage-text); font-weight: 750; }
+.navbtn:hover { background: #ffffff12; }
+.navbtn.active:hover { background: var(--sage); }
+.navicon { font-size: 17px; width: 20px; text-align: center; }
+.sidefoot {
+  margin-top: auto; padding: 20px 10px 0; font-size: 11px;
+  color: #bdd1c6; border-top: 1px solid #ffffff1b; line-height: 2;
+}
+.sidefoot small { font-size: 10px; color: #88ab99; display: block; }
+.online { display: inline-block; width: 6px; height: 6px; background: #b3d792; border-radius: 50%; margin-right: 5px; }
+.sidefoot button { background: none; border: none; color: #bdd1c6; font-size: 11px; cursor: pointer; padding: 0; text-decoration: underline; }
+
+.workspace { flex: 1; min-width: 0; padding: 30px 38px; }
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--line); padding-bottom: 24px; gap: 10px;
+}
+.crumb { font-size: 11px; color: var(--muted); }
+.crumb span { padding: 0 7px; color: #bdc9c0; }
+.topright { display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: 11px; }
+.avatar {
+  width: 38px; height: 38px; border: 1px solid #d2dfd4; background: #e6edde;
+  border-radius: 50%; display: grid; place-items: center;
+  color: var(--forest); font-weight: 750;
+}
+.workspaceintro { display: flex; gap: 14px; align-items: center; padding: 23px 0; color: var(--muted); font-size: 12px; }
+.pill {
+  background: #e5eddd; color: #47703a; padding: 5px 8px; border-radius: 5px;
+  font-size: 9px; letter-spacing: 1px; font-weight: 750; text-transform: uppercase;
+}
+
+/* ── Card / pannelli ── */
+.dashgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.stat {
+  background: white; padding: 21px; border: 1px solid var(--line);
+  border-radius: 12px; box-shadow: 0 2px 4px #243d3003;
+}
+.stat strong { display: block; font-size: 27px; letter-spacing: -.5px; font-weight: 600; color: #214e3d; margin-top: 16px; }
+.stat .small { font-size: 11px; color: #7a8b80; }
+.mPanel {
+  background: white; border: 1px solid var(--line); border-radius: 12px;
+  margin: 22px 0; padding: 24px; box-shadow: none; overflow: auto;
+}
+.mPanel h3 { font-size: 15px; font-weight: 650; color: #294d3b; margin-bottom: 15px; }
+.small { font-size: 12px; color: var(--muted); }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.between { justify-content: space-between; }
+.twocol { display: grid; grid-template-columns: 1.6fr 1fr; gap: 22px; }
+
+/* ── Bottoni: piatti, foresta ── */
+.btn {
+  border: 0; background: var(--forest); color: #fff; border-radius: 7px;
+  font-size: 12px; padding: 11px 15px; font-weight: 600; box-shadow: none;
+  border: 1px solid transparent;
+}
+.btn:hover { background: #28634e; }
+.btn.alt { background: #f4f7f1; color: #38614a; border: 1px solid #dce6d9; }
+.btn.alt:hover { background: #e8efe3; }
+.btn.danger { background: var(--danger-bg); color: var(--danger); border: 1px solid #edd4c9; }
+.btn.danger:hover { background: #f4eae7; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn.sm { padding: 7px 10px; font-size: 10px; }
+
+/* ── Form ── */
+.formgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.field { display: flex; flex-direction: column; gap: 8px; font-size: 11px; color: #637569; font-weight: 600; }
+.field input, .field select, .field textarea {
+  border: 1px solid #dbe4dc; border-radius: 7px; padding: 11px 12px;
+  background: #fdfefc; font-size: 13px; color: #294935; width: 100%;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: 2px solid #9ebda4; outline-offset: 2px;
+}
+.wide { grid-column: 1 / -1; }
+
+/* ── Tabelle ── */
+.tablewrap { overflow: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 480px; }
+th {
+  background: #f4f7f1; color: #7b8c7d; font-size: 10px; font-weight: 650;
+  text-transform: uppercase; letter-spacing: .5px; padding: 13px 10px; text-align: left;
+}
+td { font-size: 12px; color: #42604b; padding: 16px 10px; border-bottom: 1px solid #edf1eb; }
+td strong { color: var(--ink); }
+
+/* ── Tag stato ── */
+.tag {
+  display: inline-block; padding: 5px 9px; border-radius: 5px;
+  background: var(--tag-bg); color: var(--tag-color); font-size: 10px; font-weight: 650;
+}
+.tag.wait { background: var(--wait-bg); color: var(--wait-color); }
+.tag.off { background: var(--off-bg); color: var(--off-color); }
+
+.empty { text-align: center; padding: 32px; color: #7b8b7d; font-size: 12px; }
+.empty b { display: block; margin-bottom: 6px; color: #4a6b56; font-size: 13px; }
+
+/* ── Agenda / calendario ── */
+.cal-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.cal-day { background: white; border: 1px solid var(--line); border-radius: 10px; min-height: 130px; padding: 8px; }
+.cal-day.oggi { border-color: var(--green); box-shadow: 0 0 0 2px #26715a22; }
+.cal-day .giorno { font-size: 10px; font-weight: 650; text-transform: uppercase; letter-spacing: .5px; color: #7b8c7d; padding-bottom: 6px; }
+.cal-day .numero { font-size: 15px; font-weight: 600; color: var(--ink); }
+.appt {
+  font-size: 10px; padding: 4px 6px; border-radius: 5px; margin-top: 5px;
+  background: var(--tag-bg); color: var(--sage-text); cursor: pointer; line-height: 1.5;
+}
+.appt.wait { background: var(--wait-bg); color: var(--wait-color); }
+.appt.off { background: var(--off-bg); color: var(--off-color); text-decoration: line-through; }
+.appt b { display: block; }
+.slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+.slot {
+  border: 1px solid var(--line); background: white; border-radius: 7px;
+  padding: 10px 4px; font-size: 12px; font-weight: 600; color: var(--forest); text-align: center;
+}
+.slot:hover:not(:disabled) { background: var(--sage); border-color: var(--green); }
+.slot.sel { background: var(--forest); color: white; border-color: var(--forest); }
+.slot:disabled { background: var(--off-bg); color: var(--off-color); cursor: not-allowed; }
+
+/* ── Login ── */
+.login-shell { min-height: 100vh; display: grid; place-items: center; background: var(--sidebar-bg); padding: 20px; }
+.login-card { background: white; border-radius: 16px; padding: 36px; width: 100%; max-width: 400px; }
+.login-card .brandmark { margin: 0 auto 14px; }
+.login-card h1 { text-align: center; font-size: 22px; margin-bottom: 4px; }
+.login-card .sub { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+
+/* ── Sito prenotazioni (pubblico) ── */
+.site-shell { min-height: 100vh; background: var(--cream); }
+.site-header {
+  position: sticky; top: 0; z-index: 10; background: #101a17f2; color: white;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 15px max(20px, calc((100vw - 1080px)/2)); gap: 15px;
+}
+.site-header .logo { font-weight: 800; letter-spacing: 2px; font-size: 17px; color: #d3e3bb; }
+.site-hero { padding: 60px 24px 40px; text-align: center; }
+.site-hero h1 { font-size: clamp(30px, 5vw, 52px); letter-spacing: -1.5px; }
+.site-hero p { color: var(--muted); font-size: 15px; max-width: 560px; margin: 14px auto; }
+.site-wrap { max-width: 1080px; margin: 0 auto; padding: 24px; }
+.step-pills { display: flex; gap: 8px; justify-content: center; margin: 18px 0 28px; flex-wrap: wrap; }
+.step-pills .pill { font-size: 10px; padding: 7px 12px; }
+.step-pills .pill.done { background: var(--forest); color: white; }
+.servizi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.servizio-card {
+  background: white; border: 1px solid var(--line); border-radius: 12px;
+  padding: 18px; cursor: pointer; transition: all .15s;
+}
+.servizio-card:hover { border-color: var(--green); }
+.servizio-card.sel { border-color: var(--forest); box-shadow: 0 0 0 2px #174c3c22; }
+.servizio-card strong { display: block; font-size: 14px; }
+.servizio-card .prezzo { font-size: 18px; font-weight: 650; color: #214e3d; margin-top: 8px; }
+.confirm-box { background: var(--sage); border: 1px solid #cfe0c5; border-radius: 12px; padding: 26px; text-align: center; }
+
+/* ── Utilità ── */
+.fade-in { animation: fadeIn .3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } }
+.mt { margin-top: 16px; } .mb { margin-bottom: 16px; }
+.flex { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.grow { flex: 1; }
+.right { margin-left: auto; }
+.tac { text-align: center; }
+.err { background: var(--danger-bg); color: var(--danger); border: 1px solid #edd4c9; border-radius: 8px; padding: 11px 14px; font-size: 12px; }
+
+/* ── Mobile ── */
+@media (max-width: 800px) {
+  .management { display: block; }
+  .sidebar { width: 100%; height: auto; position: static; padding: 14px; }
+  .sidebar .links { display: flex; overflow-x: auto; gap: 4px; }
+  .navbtn { width: auto; white-space: nowrap; padding: 9px 12px; }
+  .studio, .sidefoot, .sidebar .logo { display: none; }
+  .brandmark { width: 40px; height: 40px; font-size: 24px; line-height: 38px; margin: 0 8px 8px; }
+  .workspace { padding: 14px; }
+  .dashgrid { grid-template-columns: 1fr 1fr; }
+  .cal-week { grid-template-columns: repeat(7, minmax(38px, 1fr)); }
+  .cal-day { min-height: 90px; padding: 5px; }
+  .appt { font-size: 9px; padding: 2px 4px; }
+  .formgrid, .twocol { grid-template-columns: 1fr; }
+}
