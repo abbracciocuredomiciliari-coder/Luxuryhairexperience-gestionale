@@ -57,20 +57,12 @@
 .lx .armo-sw.sel { outline: 2px solid var(--ink); outline-offset: 2px; }
 .lx .armo-desc { font-size: 13px; color: var(--muted); line-height: 1.75; }
 .lx .armo-meta { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; font-size: 12px; color: var(--ink); }
-.lx .armo-foto { display: flex; flex-direction: column; position: relative; }
-.lx .armo-upload-box {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 12px; border: 2px dashed #c7bba4; background: #f4f0e8; padding: 40px 24px;
-  flex: 1; color: var(--ink); text-align: center;
-}
-.lx .armo-upload-box:hover { border-color: var(--gold); }
 .lx .armo-upload-icon { font-size: 30px; color: var(--gold); }
-.lx .armo-upload-box small { color: var(--muted); font-size: 11px; line-height: 1.7; }
 .lx .armo-upload-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
 .lx .armo-btn {
   display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--ink);
   background: var(--ink); color: #fff; font-size: 12px; letter-spacing: .5px;
-  padding: 12px 18px; cursor: pointer;
+  padding: 12px 18px; cursor: pointer; text-decoration: none;
 }
 .lx .armo-btn:hover { background: var(--gold); border-color: var(--gold); color: #26221a; }
 .lx .armo-btn.ghost { background: transparent; color: var(--ink); }
@@ -78,77 +70,74 @@
 .lx .armo-btn-ico { color: var(--gold); font-size: 13px; }
 .lx .armo-btn.ghost .armo-btn-ico { color: var(--gold); }
 .lx .armo-err { font-size: 11px; color: #8a4b2a; max-width: 300px; line-height: 1.6; margin: 0; }
-.lx .armo-cam {
-  position: absolute; inset: 0; z-index: 5; background: #1c1913;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 14px; padding: 18px; color: #e7e1d4;
+.lx .armo-cta-panel {
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  gap: 14px;
 }
-.lx .armo-cam-video {
-  width: 100%; max-width: 340px; aspect-ratio: 4/3; object-fit: cover;
-  transform: scaleX(-1); border: 1px solid #4a4438; background: #000;
-}
-.lx .armo-cam-btns { display: flex; gap: 10px; }
-.lx .armo-cam .armo-btn.ghost { color: #e7e1d4; border-color: #6d6552; }
-.lx .armo-cam small { font-size: 10px; color: #b9b1a0; letter-spacing: .3px; }
-.lx .armo-change-row { position: absolute; bottom: 10px; left: 10px; display: flex; gap: 6px; }
-.lx .armo-drape-wrap {
-  flex: 1; min-height: 300px; padding: 26px; transition: background .3s;
-  display: flex; flex-direction: column; gap: 0; position: relative;
-}
-.lx .armo-face { position: relative; overflow: hidden; background: #dcd4c4; flex: 1; }
-.lx .armo-face img { width: 100%; height: 100%; object-fit: cover; }
-.lx .armo-drape-name {
-  margin-top: 12px; align-self: center; background: #000a; color: #fff;
-  font-size: 11px; padding: 6px 14px; letter-spacing: .6px;
-}
-.lx .armo-collar {
-  display: flex; height: 52px; margin-top: 6px; border-top: 3px solid #fff;
-}
-.lx .armo-collar-sw {
-  flex: 1; border: 0; cursor: pointer; padding: 0; transition: flex .25s;
-}
-.lx .armo-collar-sw:hover { flex: 1.7; }
-.lx .armo-collar-sw.sel { flex: 1.7; outline: 2px solid #fff; outline-offset: -2px; }
-.lx .armo-change {
-  border: 0; background: #000c;
-  color: #fff; font-size: 10px; padding: 7px 12px; cursor: pointer; letter-spacing: .5px;
-}
-.lx .armo-drape {
-  display: flex; align-items: flex-end; padding: 14px;
-  transition: background .3s;
-}
-.lx .armo-drape span {
-  background: #0009; color: #fff; font-size: 11px; padding: 6px 12px; letter-spacing: .5px;
-}
-.lx .armo-drape-wrap::after {
-  content: ''; position: absolute; inset: 8px; border: 1px dashed #fff8;
-  pointer-events: none;
-}
-.lx .armo-all { margin-top: 18px; }
+.lx .armo-cta-panel h3 { font-size: 30px; }
+.lx .armo-cta-panel p { font-size: 13px; color: var(--muted); line-height: 1.75; }
+.lx .armo-cta-privacy { font-size: 11px !important; font-style: italic; }
 .lx .armo-all-label { font-size: 11px; color: var(--muted); letter-spacing: .4px; display: block; margin-bottom: 10px; }
-.lx .armo-strip { display: flex; gap: 8px; flex-wrap: wrap; }
-.lx .armo-strip .armo-sw { width: 30px; height: 30px; }
-.lx .armo-ai { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
 .lx .armo-ai-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 10px 0 8px; }
 .lx .armo-ai-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; border: 1px solid #0002; }
-.lx .armo-ai-cat {
-  font-size: 9px; letter-spacing: 1.5px; color: var(--gold);
-  min-width: 52px; font-weight: 700;
-}
 .lx .armo-ai-btn {
   border: 1px solid #c9bda3; background: transparent; color: var(--ink);
   font-size: 11px; padding: 7px 12px; cursor: pointer; letter-spacing: .3px;
+  display: inline-flex; align-items: center;
 }
 .lx .armo-ai-btn:hover:not(:disabled) { border-color: var(--gold); background: var(--gold); color: #fff; }
 .lx .armo-ai-btn:disabled { opacity: .4; cursor: not-allowed; }
+.lx .armo-ai-btn.on { background: var(--ink); color: #fff; border-color: var(--ink); }
 .lx .armo-ai-status { font-size: 11px; color: var(--gold); font-style: italic; margin: 6px 0 0; }
-.lx .armo-ai-toggle { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; align-items: center; }
-.lx .armo-ai-badge {
-  background: var(--gold); color: #fff; font-size: 10px; padding: 7px 12px; letter-spacing: .5px;
-}
 .lx .armo-note {
   margin-top: 26px; font-size: 11px; color: var(--muted); max-width: 640px;
   line-height: 1.75; font-style: italic;
 }
 @media (max-width: 900px) { .lx .armo-grid { grid-template-columns: 1fr; } }
-@media (max-width: 760px) { .lx .armo-prova { padding: 55px 6%; } .lx .armo-drape-wrap { min-height: 190px; } }
+@media (max-width: 760px) { .lx .armo-prova { padding: 55px 6%; } }
+
+/* ── Pagina /prova-colori (pennello + ricolorazione locale) ── */
+.lx .pv-page {
+  max-width: 1150px; margin: 0 auto; padding: 60px 4.6% 90px;
+  display: flex; flex-direction: column;
+}
+.lx .pv-upload-box {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; border: 2px dashed #c7bba4; padding: 60px 24px; text-align: center;
+}
+.lx .pv-upload-box:hover { border-color: var(--gold); }
+.lx .pv-upload-box small { color: var(--muted); font-size: 11px; line-height: 1.7; }
+.lx .pv-workspace { display: flex; flex-direction: column; gap: 16px; }
+.lx .pv-toolbar {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  padding: 12px 16px; background: #efe9dd; border: 1px solid var(--line);
+}
+.lx .pv-sep { flex: 1; }
+.lx .pv-download { border-color: var(--gold); color: var(--gold); }
+.lx .pv-main { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.lx .pv-canvas-wrap {
+  background: #26241f; border: 1px solid var(--line); padding: 10px;
+  display: flex; justify-content: center;
+}
+.lx .pv-canvas-wrap canvas {
+  max-width: 100%; height: auto; touch-action: none; cursor: crosshair;
+  display: block;
+}
+.lx .pv-controls { display: flex; flex-direction: column; gap: 20px; }
+.lx .pv-group { display: flex; flex-direction: column; gap: 8px; }
+.lx .pv-label { font-size: 9px; letter-spacing: 1.8px; color: var(--gold); font-weight: 700; }
+.lx .pv-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.lx .pv-slider {
+  display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--muted);
+}
+.lx .pv-slider input { flex: 1; accent-color: var(--gold); }
+.lx .pv-swatches { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.lx .pv-swatches .armo-sw { width: 30px; height: 30px; }
+.lx .pv-custom {
+  width: 30px; height: 30px; border-radius: 50%; overflow: hidden; cursor: pointer;
+  border: 2px dashed #c9bda3; display: inline-flex;
+}
+.lx .pv-custom input { width: 150%; height: 150%; margin: -25%; cursor: pointer; }
+.lx .pv-hold { margin-top: 4px; }
+.lx .pv-status { font-size: 12px; color: var(--muted); margin-top: 18px; font-style: italic; }
+@media (max-width: 900px) { .lx .pv-main { grid-template-columns: 1fr; } }
