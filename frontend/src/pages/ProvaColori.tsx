@@ -34,6 +34,25 @@ const PALETTE: [string, string][] = [
   ['Borgogna', '#722e44'], ['Nero morbido', '#242328'], ['Rosso caldo', '#b84d40'], ['Rosa freddo', '#b56485'],
   ['Blu profondo', '#314b78'], ['Verde salvia', '#889879'], ['Avorio', '#ece3cf'], ['Viola', '#745586'],
 ];
+// palette armocromatiche per stagione (come i drappi della consulenza)
+const STAGIONI: { id: string; label: string; colori: [string, string][] }[] = [
+  { id: 'primavera', label: 'Primavera', colori: [
+    ['Corallo', '#f2664c'], ['Pesca', '#ffb08a'], ['Albicocca', '#f4a261'], ['Verde prato', '#8fbf5f'],
+    ['Turchese chiaro', '#5cc8c0'], ['Giallo caldo', '#f4d35e'], ['Camel', '#c1915c'], ['Avorio', '#f5eedd'],
+  ]},
+  { id: 'estate', label: 'Estate', colori: [
+    ['Rosa cipria', '#e8b4b8'], ['Lavanda', '#b8a9c9'], ['Azzurro polvere', '#9bb7d4'], ['Grigio perla', '#b7b8bc'],
+    ['Jeans chiaro', '#7a9cc6'], ['Malva', '#a05c7b'], ['Verde salvia', '#a9bca2'], ['Bianco latte', '#f3f0ea'],
+  ]},
+  { id: 'autunno', label: 'Autunno', colori: [
+    ['Ruggine', '#b7410e'], ['Terracotta', '#c4714b'], ['Senape', '#d4a017'], ['Verde oliva', '#6b7c3f'],
+    ['Cioccolato', '#5c3a21'], ['Bordeaux', '#7a2e3d'], ['Teal scuro', '#2d6a6a'], ['Beige caldo', '#d9c29a'],
+  ]},
+  { id: 'inverno', label: 'Inverno', colori: [
+    ['Nero', '#1a1a1a'], ['Bianco ottico', '#ffffff'], ['Rosso rubino', '#a4133c'], ['Blu royal', '#2f3fbf'],
+    ['Fucsia', '#c9184a'], ['Smeraldo', '#146b52'], ['Antracite', '#3d4451'], ['Viola', '#5a189a'],
+  ]},
+];
 const TEAL = '#39e0b1';
 
 let segPromise: Promise<ImageSegmenter> | null = null;
@@ -79,6 +98,11 @@ export default function ProvaColori() {
   const [consensoAi, setConsensoAi] = useState(false);
   const [prodotti, setProdotti] = useState<{ _id: string; nome: string; immagine?: string; categoria?: string }[]>([]);
   const [capo, setCapo] = useState('');
+  const [copertura, setCopertura] = useState(55);        // quanto della chioma prende la sfumatura
+  const [stileId, setStileId] = useState<string | null>(null);
+  const [paletteGruppo, setPaletteGruppo] = useState<string>('tutti');
+  const stileBaseRef = useRef<HTMLCanvasElement | null>(null); // maschera capelli piena prima dello stile
+  const cursorRef = useRef<HTMLDivElement | null>(null);       // anello anteprima pennello
   const uploadRef = useRef<HTMLInputElement | null>(null);
   const selfieRef = useRef<HTMLInputElement | null>(null);
 
@@ -143,31 +167,19 @@ export default function ProvaColori() {
     return o.toDataURL('image/jpeg', 0.88);
   };
 
-  const imgToDataUrl = (src: string): Promise<string> => new Promise(ok => {
-    const i = new Image(); i.crossOrigin = 'anonymous';
-    i.onload = () => {
-      const c = document.createElement('canvas');
-      c.width = i.naturalWidth; c.height = i.naturalHeight;
-      c.getContext('2d')!.drawImage(i, 0, 0);
-      try { ok(c.toDataURL('image/jpeg', 0.85)); } catch { ok(''); }
-    };
-    i.onerror = () => ok('');
-    i.src = src;
-  });
-
-  const provaGen = async (prompt: string, image2?: string) => {
+  const provaGen = async (prompt: string, immagineIn?: string) => {
     const base = baseRef.current;
     if (!base?.width || !consensoAi || aiGenBusy) return;
     setAiGenBusy(true);
-    setStatus('Il servizio AI sta elaborando la foto… 10-30 secondi.');
+    setStatus('Il servizio AI sta elaborando la foto… 10-40 secondi.');
     try {
       const { data } = await api.post('/public/prova-ai', {
-        image: ridimensionaCanvas(base),
-        image2,
+        image: immagineIn || ridimensionaCanvas(base),
         prompt,
       });
       if (!data?.image) throw new Error('empty');
       const img = await new Promise<HTMLImageElement>((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = data.image; });
+      resetStile();
       // il risultato diventa la nuova foto di lavoro: maschere azzerate
       const w = Math.min(1200, img.naturalWidth), h = Math.round(img.naturalHeight * w / img.naturalWidth);
       base.width = w; base.height = h;
@@ -183,16 +195,35 @@ export default function ProvaColori() {
     } finally { setAiGenBusy(false); }
   };
 
+  const imgEl = (src: string): Promise<HTMLImageElement | null> => new Promise(ok => {
+    const i = new Image(); i.crossOrigin = 'anonymous';
+    i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src;
+  });
+
+  // Il modello gratuito accetta UNA sola immagine: compongo foto + capo
+  // in un unico pannello così il servizio vede il capo da far indossare.
   const indossaCapo = async () => {
     const p = prodotti.find(x => x._id === capo);
-    if (!p) return;
-    let ref = '';
-    if (p.immagine) ref = await imgToDataUrl(p.immagine);
+    const base = baseRef.current;
+    if (!p || !base?.width || !consensoAi || aiGenBusy) return;
+    let composita: string | undefined;
+    if (p.immagine) {
+      const ref = await imgEl(p.immagine);
+      if (ref) {
+        const wRef = Math.max(120, Math.round(ref.naturalWidth * base.height / ref.naturalHeight));
+        const c = newMask(base.width + wRef + 16, base.height);
+        const x = c.getContext('2d')!;
+        x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height);
+        x.drawImage(base, 0, 0);
+        x.drawImage(ref, base.width + 8, 0, wRef, base.height);
+        composita = ridimensionaCanvas(c);
+      }
+    }
     provaGen(
-      ref
-        ? `Fai indossare alla persona il capo mostrato nella seconda immagine (${p.nome}), sostituendo il suo indumento superiore in modo realistico`
-        : `Cambia l'indumento superiore della persona in: ${p.nome}${p.categoria ? `, tipo ${p.categoria}` : ''}`,
-      ref || undefined,
+      composita
+        ? `L'immagine mostra una persona a sinistra e un capo d'abbigliamento (${p.nome}) su fondo bianco a destra. Fai indossare alla persona esattamente quel capo al posto del suo indumento, mantenendo identici viso, capelli, posa e sfondo. Nel risultato mostra SOLO la persona a tutta scena: elimina completamente il pannello del capo sulla destra.`
+        : `Cambia l'indumento della persona in: ${p.nome}${p.categoria ? ` (${p.categoria})` : ''}, realistico`,
+      composita,
     );
   };
 
@@ -213,6 +244,7 @@ export default function ProvaColori() {
       base.getContext('2d')!.drawImage(image, 0, 0, w, h);
       baseRef.current = base;
       masksRef.current = { hair: newMask(w, h), clothes: newMask(w, h) };
+      resetStile();
       beforeRef.current = false; maskViewRef.current = false;
       const canvas = canvasRef.current!;
       canvas.width = w; canvas.height = h;
@@ -248,9 +280,20 @@ export default function ProvaColori() {
     const p = point(e); lastRef.current = p; stroke(p, p);
   };
   const onMove = (e: React.PointerEvent) => {
+    // anello anteprima: il diametro mostra la misura reale del pennello
+    const cv = canvasRef.current, cur = cursorRef.current;
+    if (cv && cur) {
+      const r = cv.getBoundingClientRect();
+      const d = Math.max(6, brushSize * r.width / 600);
+      cur.style.display = 'block';
+      cur.style.width = cur.style.height = `${d}px`;
+      cur.style.left = `${e.clientX - r.left - d / 2}px`;
+      cur.style.top = `${e.clientY - r.top - d / 2}px`;
+    }
     if (!drawingRef.current) return;
     const p = point(e); stroke(lastRef.current!, p); lastRef.current = p;
   };
+  const nascondiCursore = () => { if (cursorRef.current) cursorRef.current.style.display = 'none'; };
   const stop = () => { drawingRef.current = false; lastRef.current = null; };
 
   // ── rilevamento automatico MediaPipe (locale, nessun invio) ──
@@ -293,6 +336,7 @@ export default function ProvaColori() {
     setStatus(`Riconosco ${zona === 'hair' ? 'i capelli' : 'il vestito'} sul dispositivo…`);
     try {
       if (await detect(zona)) {
+        if (zona === 'hair') resetStile();
         setTarget(zona); render();
         setStatus('Zona rilevata. Ritocca i bordi con pennello o gomma.');
       } else {
@@ -304,12 +348,13 @@ export default function ProvaColori() {
   };
 
   // ── Stili colore sui capelli: schiariture, colpi di sole, balayage ──
-  // Modificano l'alfa della maschera capelli: solo parte dei capelli viene tinta.
-  const STILI: { id: string; label: string; color: string; nome: string; intensity: number }[] = [
-    { id: 'schiaritura', label: 'Schiaritura miele', color: '#c9984f', nome: 'Biondo miele', intensity: 88 },
-    { id: 'balayage', label: 'Balayage', color: '#c7a568', nome: 'Biondo miele', intensity: 92 },
-    { id: 'colpi', label: 'Colpi di sole', color: '#d9b36a', nome: 'Dorato', intensity: 85 },
-    { id: 'rame', label: 'Riflessi rame', color: '#b46b3c', nome: 'Rame', intensity: 85 },
+  // La sfumatura si rigenera dalla maschera piena: lo slider "copertura" decide
+  // quanta chioma viene tinta e il colore/intensità scelti la tingono.
+  const STILI: { id: string; label: string }[] = [
+    { id: 'schiaritura', label: 'Schiaritura' },
+    { id: 'balayage', label: 'Balayage' },
+    { id: 'colpi', label: 'Colpi di sole' },
+    { id: 'riflessi', label: 'Riflessi' },
   ];
 
   const maskHaContenuto = (zona: Zona): boolean => {
@@ -318,6 +363,51 @@ export default function ProvaColori() {
     const d = mc.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, mc.width, mc.height).data;
     for (let i = 3; i < d.length; i += 4) if (d[i] > 10) return true;
     return false;
+  };
+
+  const resetStile = () => { stileBaseRef.current = null; setStileId(null); };
+
+  // rigenera la maschera capelli: base piena × pattern dello stile, graduato da `cop` (0-100)
+  const rigeneraSfumatura = (id: string, cop: number) => {
+    const piena = stileBaseRef.current;
+    if (!piena) return;
+    const mc = newMask(piena.width, piena.height);
+    const mctx = mc.getContext('2d', { willReadFrequently: true })!;
+    mctx.drawImage(piena, 0, 0);
+    if (id === 'schiaritura') { masksRef.current.hair = mc; render(); return; }
+    const idata = mctx.getImageData(0, 0, mc.width, mc.height);
+    const d = idata.data, w = mc.width, h = mc.height;
+    if (id === 'balayage' || id === 'riflessi') {
+      // gradiente radice→punte: `cop` = % di chioma colorata a partire dalle punte
+      let yMin = h, yMax = 0;
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        if (d[(y * w + x) * 4 + 3] > 10) { if (y < yMin) yMin = y; if (y > yMax) yMax = y; }
+      }
+      const span = Math.max(1, yMax - yMin);
+      const est = cop / 100 * (id === 'riflessi' ? 1.15 : 1); // riflessi sale più in alto
+      const t0 = Math.max(0, 1 - est);
+      const rampa = Math.max(0.08, est * 0.9);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4 + 3;
+        if (!d[i]) continue;
+        const t = (y - yMin) / span;
+        const k = Math.max(0, Math.min(1, (t - t0) / rampa));
+        d[i] = Math.round(d[i] * (k * k * (3 - 2 * k)));
+      }
+    } else if (id === 'colpi') {
+      // ciocche ondulate: `cop` = densità delle mechès
+      const soglia = 1 - Math.min(0.95, cop / 100 * 1.15);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4 + 3;
+        if (!d[i]) continue;
+        const onda = Math.sin(x * 0.045 + Math.sin(y * 0.012) * 4 + y * 0.004);
+        const k = Math.max(0, Math.min(1, (onda - soglia) / Math.max(0.08, 1 - soglia) * 1.4));
+        d[i] = Math.round(d[i] * k);
+      }
+    }
+    mctx.putImageData(idata, 0, 0);
+    masksRef.current.hair = mc;
+    render();
   };
 
   const applicaStile = async (stile: typeof STILI[number]) => {
@@ -329,45 +419,24 @@ export default function ProvaColori() {
         setStatus('Non ho trovato i capelli: dipingi la zona col pennello e riprova.');
         return;
       }
-      const mc = masksRef.current.hair!;
-      const mctx = mc.getContext('2d', { willReadFrequently: true })!;
-      const id = mctx.getImageData(0, 0, mc.width, mc.height);
-      const d = id.data;
-      const w = mc.width, h = mc.height;
-
-      if (stile.id === 'balayage' || stile.id === 'rame') {
-        // gradiente: quasi niente in alto, pieno sulle punte (ultimo 45% della chioma)
-        let yMin = h, yMax = 0;
-        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-          if (d[(y * w + x) * 4 + 3] > 10) { if (y < yMin) yMin = y; if (y > yMax) yMax = y; }
-        }
-        const span = Math.max(1, yMax - yMin);
-        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-          const i = (y * w + x) * 4 + 3;
-          if (!d[i]) continue;
-          const t = (y - yMin) / span; // 0 radice → 1 punte
-          const k = stile.id === 'balayage'
-            ? Math.max(0, Math.min(1, (t - 0.45) / 0.5)) // balayage: solo metà inferiore, morbido
-            : Math.max(0, Math.min(1, (t - 0.3) / 0.7));  // riflessi: da un terzo in giù
-          d[i] = Math.round(d[i] * (k * k * (3 - 2 * k))); // smoothstep
-        }
-      } else if (stile.id === 'colpi') {
-        // ciocche ondulate: solo ~30% dei capelli, a bande sinuose verticali
-        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-          const i = (y * w + x) * 4 + 3;
-          if (!d[i]) continue;
-          const onda = Math.sin(x * 0.045 + Math.sin(y * 0.012) * 4 + y * 0.004);
-          const k = Math.max(0, (onda - 0.45) / 0.55); // bande sottili
-          d[i] = Math.round(d[i] * Math.min(1, k * 1.6));
-        }
+      if (stileId === null || !stileBaseRef.current) {
+        // prima applicazione: salvo la maschera piena come base rigenerabile
+        const piena = masksRef.current.hair!;
+        const copia = newMask(piena.width, piena.height);
+        copia.getContext('2d')!.drawImage(piena, 0, 0);
+        stileBaseRef.current = copia;
       }
-      // 'schiaritura': maschera intera, solo colore/intensità cambiano
-      mctx.putImageData(id, 0, 0);
-      setTarget('hair'); setColor(stile.color); setColorName(stile.nome); setIntensity(stile.intensity);
-      setStatus(`${stile.label} applicato — cambia colore e intensità come preferisci.`);
+      rigeneraSfumatura(stile.id, copertura);
+      setStileId(stile.id); setTarget('hair');
+      setStatus(`${stile.label} applicato — gradua la copertura, scegli il colore e l'intensità.`);
     } catch {
       setStatus('Non ho trovato i capelli: dipingi la zona col pennello e riprova.');
     } finally { setAiBusy(false); }
+  };
+
+  const cambiaCopertura = (v: number) => {
+    setCopertura(v);
+    if (stileId && stileId !== 'schiaritura') rigeneraSfumatura(stileId, v);
   };
 
   const hold = (which: 'before' | 'mask') => ({
@@ -392,6 +461,7 @@ export default function ProvaColori() {
     const canvas = canvasRef.current!;
     canvas.width = base.width; canvas.height = base.height;
     masksRef.current = { hair: newMask(base.width, base.height), clothes: newMask(base.width, base.height) };
+    resetStile();
     render();
     setStatus('Foto ruotata. Le selezioni sono state azzerate.');
   };
@@ -400,6 +470,7 @@ export default function ProvaColori() {
     decodeRef.current++;
     drawingRef.current = false; beforeRef.current = false; maskViewRef.current = false;
     baseRef.current = null; masksRef.current = {};
+    resetStile();
     const canvas = canvasRef.current!; canvas.width = 0; canvas.height = 0;
     setCaricata(false);
     setStatus('Foto eliminata dalla prova. L\'originale non è stato toccato.');
@@ -481,7 +552,9 @@ export default function ProvaColori() {
               <div className="pv-canvas-wrap">
                 <canvas ref={canvasRef} onPointerDown={onDown} onPointerMove={onMove}
                   onPointerUp={stop} onPointerCancel={stop} onLostPointerCapture={stop}
+                  onPointerLeave={nascondiCursore}
                   aria-label="Foto su cui dipingere la selezione" />
+                <div ref={cursorRef} className="pv-brush-cursor" aria-hidden="true" />
               </div>
 
               <div className="pv-controls">
@@ -497,7 +570,7 @@ export default function ProvaColori() {
                   <div className="pv-row">
                     <button className={`armo-ai-btn ${brushMode === 'paint' ? 'on' : ''}`} onClick={() => setBrushMode('paint')}>Colora</button>
                     <button className={`armo-ai-btn ${brushMode === 'erase' ? 'on' : ''}`} onClick={() => setBrushMode('erase')}>Gomma</button>
-                    <button className="armo-ai-btn" onClick={() => { masksRef.current[target] = newMask(baseRef.current!.width, baseRef.current!.height); render(); setStatus('Selezione cancellata.'); }}>Pulisci zona</button>
+                    <button className="armo-ai-btn" onClick={() => { masksRef.current[target] = newMask(baseRef.current!.width, baseRef.current!.height); if (target === 'hair') resetStile(); render(); setStatus('Selezione cancellata.'); }}>Pulisci zona</button>
                   </div>
                   <label className="pv-slider">Misura
                     <input type="range" min={10} max={140} value={brushSize} onChange={e => setBrushSize(+e.target.value)} />
@@ -507,20 +580,35 @@ export default function ProvaColori() {
                   <span className="pv-label">STILI CAPELLI</span>
                   <div className="pv-row">
                     {STILI.map(s => (
-                      <button key={s.id} className="armo-ai-btn" disabled={aiBusy}
+                      <button key={s.id} className={`armo-ai-btn ${stileId === s.id ? 'on' : ''}`} disabled={aiBusy}
                         onClick={() => applicaStile(s)}>{s.label}</button>
                     ))}
                   </div>
-                  <small className="pv-hint">Schiariture e colpi di sole colorano solo una parte della chioma.</small>
+                  {stileId && stileId !== 'schiaritura' && (
+                    <label className="pv-slider">Copertura sfumatura {copertura}%
+                      <input type="range" min={10} max={100} value={copertura}
+                        onChange={e => cambiaCopertura(+e.target.value)} />
+                    </label>
+                  )}
+                  <small className="pv-hint">
+                    La sfumatura usa il colore che scegli sotto: gradua la copertura (quanta chioma si tinge),
+                    il colore e l'intensità.
+                  </small>
                 </div>
                 <div className="pv-group">
                   <span className="pv-label">COLORE — {colorName}</span>
+                  <select className="pv-select" value={paletteGruppo} onChange={e => setPaletteGruppo(e.target.value)}
+                    aria-label="Palette di colori">
+                    <option value="tutti">Tutti i colori</option>
+                    {STAGIONI.map(s => <option key={s.id} value={s.id}>Armocromia: {s.label}</option>)}
+                  </select>
                   <div className="pv-swatches">
-                    {PALETTE.map(([nome, hex]) => (
-                      <button key={hex} className={`armo-sw ${color === hex ? 'sel' : ''}`} style={{ background: hex }}
-                        title={nome} aria-label={nome} aria-pressed={color === hex}
-                        onClick={() => { setColor(hex); setColorName(nome); }} />
-                    ))}
+                    {(paletteGruppo === 'tutti' ? PALETTE : STAGIONI.find(s => s.id === paletteGruppo)!.colori)
+                      .map(([nome, hex]) => (
+                        <button key={hex} className={`armo-sw ${color === hex ? 'sel' : ''}`} style={{ background: hex }}
+                          title={nome} aria-label={nome} aria-pressed={color === hex}
+                          onClick={() => { setColor(hex); setColorName(nome); }} />
+                      ))}
                     <label className="pv-custom" title="Colore personalizzato">
                       <input type="color" value={color} onChange={e => { setColor(e.target.value); setColorName('Colore personalizzato'); }} />
                     </label>

@@ -343,9 +343,12 @@ router.post('/prova-ai', async (req, res) => {
     });
     if (!r.ok) {
       const t = await r.text().catch(() => '');
-      const msg = r.status === 401 || r.status === 402
+      const low = /insufficient balance|insufficient funds/i.test(t);
+      const msg = r.status === 401
         ? 'Il servizio richiede un token: imposta POLLINATIONS_TOKEN nel backend'
-        : `Servizio AI: ${t.slice(0, 160) || r.statusText}`;
+        : low || r.status === 402
+          ? 'Crediti gratuiti del servizio esauriti: si ricaricano col tempo, riprova più tardi'
+          : `Servizio AI: ${t.slice(0, 160) || r.statusText}`;
       return res.status(502).json({ message: msg });
     }
     const data: any = await r.json();
