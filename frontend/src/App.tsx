@@ -18,7 +18,6 @@ import PrenotaPage from './pages/PrenotaPage';
 import CartellaPubblica from './pages/CartellaPubblica';
 import Shop from './pages/Shop';
 import Home from './pages/Home';
-import ProvaColori from './pages/ProvaColori';
 
 const NAV: { sez?: string; to?: string; label?: string; icon?: string; soloAdmin?: boolean }[] = [
   { sez: 'Salone' },
@@ -93,7 +92,6 @@ export default function App() {
       {/* Sito pubblico: vetrina, prenotazioni, shop, cartella cliente */}
       <Route path="/" element={<Home />} />
       <Route path="/prenota" element={<PrenotaPage />} />
-      <Route path="/prova-colori" element={<ProvaColori />} />
       <Route path="/shop" element={<Shop />} />
       <Route path="/cartella" element={<CartellaPubblica />} />
 

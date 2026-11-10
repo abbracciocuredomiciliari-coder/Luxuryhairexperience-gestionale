@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 const VOCI: { to: string; label: string; key: string }[] = [
   { to: '/', label: 'Home', key: 'home' },
-  { to: '/prova-colori', label: 'Prova colori', key: 'prova-colori' },
+  { to: '/prenota', label: 'Prenota', key: 'prenota' },
   { to: '/prenota', label: 'Prenota', key: 'prenota' },
   { to: '/shop', label: 'Shop', key: 'shop' },
   { to: '/cartella', label: 'La mia cartella', key: 'cartella' },
