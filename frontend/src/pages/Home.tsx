@@ -43,13 +43,14 @@ function GalleryModal({ kind, onClose }: { kind: 'video' | 'image'; onClose: () 
   const [at, setAt] = useState(0);
   const startX = useRef(0);
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const next = (n: number) => { if (items.length) setAt(a => (a + n + items.length) % items.length); };
 
-  // Ferma il video precedente quando si cambia lavoro o si chiude
-  useEffect(() => {
-    const el = stageRef.current;
-    return () => { el?.querySelectorAll('video').forEach(v => { v.pause(); v.removeAttribute('src'); (v as any).load?.(); }); };
-  }, [at]);
+  const stopVideo = () => {
+    stageRef.current?.querySelectorAll('video').forEach(v => { v.pause(); v.removeAttribute('src'); (v as any).load?.(); });
+  };
+  const next = (n: number) => { if (items.length) { stopVideo(); setAt(a => (a + n + items.length) % items.length); } };
+
+  // Alla chiusura ferma eventuali video in riproduzione
+  useEffect(() => () => stopVideo(), []);
   useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = ''; }; }, []);
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
