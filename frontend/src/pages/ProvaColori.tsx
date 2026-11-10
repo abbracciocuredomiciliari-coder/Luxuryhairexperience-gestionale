@@ -270,22 +270,21 @@ export default function ProvaColori() {
           </p>
         </div>
 
-        {!caricata ? (
-          <div className="armo-panel pv-upload-box">
-            <span className="armo-upload-icon">✦</span>
-            <b>Aggiungi la tua foto</b>
-            <small>Selfie in luce naturale, senza filtri, capelli scoperti.<br />Elaborata nel browser: nessun invio, nessun salvataggio.</small>
-            <div className="armo-upload-btns">
-              <button className="armo-btn" onClick={() => selfieRef.current?.click()}>
-                <span className="armo-btn-ico">◉</span> Scatta un selfie
-              </button>
-              <button className="armo-btn ghost" onClick={() => uploadRef.current?.click()}>
-                <span className="armo-btn-ico">▤</span> Carica da galleria
-              </button>
-            </div>
+        <div className="armo-panel pv-upload-box" hidden={caricata}>
+          <span className="armo-upload-icon">✦</span>
+          <b>Aggiungi la tua foto</b>
+          <small>Selfie in luce naturale, senza filtri, capelli scoperti.<br />Elaborata nel browser: nessun invio, nessun salvataggio.</small>
+          <div className="armo-upload-btns">
+            <button className="armo-btn" onClick={() => selfieRef.current?.click()}>
+              <span className="armo-btn-ico">◉</span> Scatta un selfie
+            </button>
+            <button className="armo-btn ghost" onClick={() => uploadRef.current?.click()}>
+              <span className="armo-btn-ico">▤</span> Carica da galleria
+            </button>
           </div>
-        ) : (
-          <div className="pv-workspace">
+        </div>
+
+        <div className="pv-workspace" hidden={!caricata}>
             <div className="pv-toolbar">
               <button className="armo-ai-btn" disabled={aiBusy} onClick={() => rileva('hair')}>✦ Rileva capelli</button>
               <button className="armo-ai-btn" disabled={aiBusy} onClick={() => rileva('clothes')}>✦ Rileva vestito</button>
@@ -344,7 +343,6 @@ export default function ProvaColori() {
               </div>
             </div>
           </div>
-        )}
 
         <input ref={uploadRef} type="file" accept="image/jpeg,image/png,image/webp" hidden
           onChange={e => { load(e.target.files?.[0]); e.target.value = ''; }} />
