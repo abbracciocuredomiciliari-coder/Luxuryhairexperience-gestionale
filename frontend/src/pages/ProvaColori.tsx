@@ -158,43 +158,119 @@ export default function ProvaColori() {
   const stop = () => { drawingRef.current = false; lastRef.current = null; };
 
   // ── rilevamento automatico MediaPipe (locale, nessun invio) ──
-  const rileva = async (zona: Zona) => {
+  // rileva la zona e scrive la maschera; ritorna true se trovata
+  const detect = async (zona: Zona): Promise<boolean> => {
     const base = baseRef.current;
-    if (!base?.width || aiBusy) return;
+    if (!base?.width) return false;
+    if (!segRef.current) segRef.current = await getSegmenter();
+    const res = segRef.current.segment(base);
+    const mask = res.categoryMask;
+    if (!mask) return false;
+    const mw = mask.width, mh = mask.height, m = mask.getAsUint8Array();
+    const cls = ZONA_CLASSE[zona];
+    const raw = newMask(base.width, base.height);
+    const rctx = raw.getContext('2d')!;
+    const md = rctx.createImageData(raw.width, raw.height);
+    let found = 0;
+    for (let y = 0; y < raw.height; y++) {
+      const my = Math.min(mh - 1, Math.round(y * mh / raw.height)) * mw;
+      for (let x = 0; x < raw.width; x++) {
+        if (m[my + Math.min(mw - 1, Math.round(x * mw / raw.width))] !== cls) continue;
+        const i = (y * raw.width + x) * 4;
+        md.data[i] = 57; md.data[i + 1] = 224; md.data[i + 2] = 177; md.data[i + 3] = 255;
+        found++;
+      }
+    }
+    if (found < raw.width * raw.height * 0.005) return false;
+    rctx.putImageData(md, 0, 0);
+    const mc = newMask(raw.width, raw.height);
+    const mctx = mc.getContext('2d')!;
+    mctx.filter = 'blur(2px)';
+    mctx.drawImage(raw, 0, 0);
+    masksRef.current[zona] = mc;
+    return true;
+  };
+
+  const rileva = async (zona: Zona) => {
+    if (!baseRef.current?.width || aiBusy) return;
     setAiBusy(true);
     setStatus(`Riconosco ${zona === 'hair' ? 'i capelli' : 'il vestito'} sul dispositivo…`);
     try {
-      if (!segRef.current) segRef.current = await getSegmenter();
-      const res = segRef.current.segment(base);
-      const mask = res.categoryMask;
-      if (!mask) throw new Error('no mask');
-      const mw = mask.width, mh = mask.height, m = mask.getAsUint8Array();
-      const cls = ZONA_CLASSE[zona];
-      // maschera alfa nella dimensione della foto, poi bordi ammorbiditi
-      const raw = newMask(base.width, base.height);
-      const rctx = raw.getContext('2d')!;
-      const md = rctx.createImageData(raw.width, raw.height);
-      let found = 0;
-      for (let y = 0; y < raw.height; y++) {
-        const my = Math.min(mh - 1, Math.round(y * mh / raw.height)) * mw;
-        for (let x = 0; x < raw.width; x++) {
-          if (m[my + Math.min(mw - 1, Math.round(x * mw / raw.width))] !== cls) continue;
-          const i = (y * raw.width + x) * 4;
-          md.data[i] = 57; md.data[i + 1] = 224; md.data[i + 2] = 177; md.data[i + 3] = 255;
-          found++;
-        }
+      if (await detect(zona)) {
+        setTarget(zona); render();
+        setStatus('Zona rilevata. Ritocca i bordi con pennello o gomma.');
+      } else {
+        setStatus('Non ho trovato la zona in questa foto: selezionala con il pennello.');
       }
-      if (found < raw.width * raw.height * 0.005) throw new Error('empty');
-      rctx.putImageData(md, 0, 0);
-      const mc = newMask(raw.width, raw.height);
-      const mctx = mc.getContext('2d')!;
-      mctx.filter = 'blur(2px)';
-      mctx.drawImage(raw, 0, 0);
-      masksRef.current[zona] = mc;
-      setTarget(zona); render();
-      setStatus('Zona rilevata. Ritocca i bordi con pennello o gomma.');
     } catch {
       setStatus('Non ho trovato la zona in questa foto: selezionala con il pennello.');
+    } finally { setAiBusy(false); }
+  };
+
+  // ── Stili colore sui capelli: schiariture, colpi di sole, balayage ──
+  // Modificano l'alfa della maschera capelli: solo parte dei capelli viene tinta.
+  const STILI: { id: string; label: string; color: string; nome: string; intensity: number }[] = [
+    { id: 'schiaritura', label: 'Schiaritura miele', color: '#c9984f', nome: 'Biondo miele', intensity: 88 },
+    { id: 'balayage', label: 'Balayage', color: '#c7a568', nome: 'Biondo miele', intensity: 92 },
+    { id: 'colpi', label: 'Colpi di sole', color: '#d9b36a', nome: 'Dorato', intensity: 85 },
+    { id: 'rame', label: 'Riflessi rame', color: '#b46b3c', nome: 'Rame', intensity: 85 },
+  ];
+
+  const maskHaContenuto = (zona: Zona): boolean => {
+    const mc = masksRef.current[zona];
+    if (!mc) return false;
+    const d = mc.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, mc.width, mc.height).data;
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 10) return true;
+    return false;
+  };
+
+  const applicaStile = async (stile: typeof STILI[number]) => {
+    if (!baseRef.current?.width || aiBusy) return;
+    setAiBusy(true);
+    setStatus(`Applico ${stile.label.toLowerCase()}…`);
+    try {
+      if (!maskHaContenuto('hair') && !(await detect('hair'))) {
+        setStatus('Non ho trovato i capelli: dipingi la zona col pennello e riprova.');
+        return;
+      }
+      const mc = masksRef.current.hair!;
+      const mctx = mc.getContext('2d', { willReadFrequently: true })!;
+      const id = mctx.getImageData(0, 0, mc.width, mc.height);
+      const d = id.data;
+      const w = mc.width, h = mc.height;
+
+      if (stile.id === 'balayage' || stile.id === 'rame') {
+        // gradiente: quasi niente in alto, pieno sulle punte (ultimo 45% della chioma)
+        let yMin = h, yMax = 0;
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          if (d[(y * w + x) * 4 + 3] > 10) { if (y < yMin) yMin = y; if (y > yMax) yMax = y; }
+        }
+        const span = Math.max(1, yMax - yMin);
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4 + 3;
+          if (!d[i]) continue;
+          const t = (y - yMin) / span; // 0 radice → 1 punte
+          const k = stile.id === 'balayage'
+            ? Math.max(0, Math.min(1, (t - 0.45) / 0.5)) // balayage: solo metà inferiore, morbido
+            : Math.max(0, Math.min(1, (t - 0.3) / 0.7));  // riflessi: da un terzo in giù
+          d[i] = Math.round(d[i] * (k * k * (3 - 2 * k))); // smoothstep
+        }
+      } else if (stile.id === 'colpi') {
+        // ciocche ondulate: solo ~30% dei capelli, a bande sinuose verticali
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4 + 3;
+          if (!d[i]) continue;
+          const onda = Math.sin(x * 0.045 + Math.sin(y * 0.012) * 4 + y * 0.004);
+          const k = Math.max(0, (onda - 0.45) / 0.55); // bande sottili
+          d[i] = Math.round(d[i] * Math.min(1, k * 1.6));
+        }
+      }
+      // 'schiaritura': maschera intera, solo colore/intensità cambiano
+      mctx.putImageData(id, 0, 0);
+      setTarget('hair'); setColor(stile.color); setColorName(stile.nome); setIntensity(stile.intensity);
+      setStatus(`${stile.label} applicato — cambia colore e intensità come preferisci.`);
+    } catch {
+      setStatus('Non ho trovato i capelli: dipingi la zona col pennello e riprova.');
     } finally { setAiBusy(false); }
   };
 
@@ -319,6 +395,16 @@ export default function ProvaColori() {
                   <label className="pv-slider">Misura
                     <input type="range" min={10} max={140} value={brushSize} onChange={e => setBrushSize(+e.target.value)} />
                   </label>
+                </div>
+                <div className="pv-group">
+                  <span className="pv-label">STILI CAPELLI</span>
+                  <div className="pv-row">
+                    {STILI.map(s => (
+                      <button key={s.id} className="armo-ai-btn" disabled={aiBusy}
+                        onClick={() => applicaStile(s)}>{s.label}</button>
+                    ))}
+                  </div>
+                  <small className="pv-hint">Schiariture e colpi di sole colorano solo una parte della chioma.</small>
                 </div>
                 <div className="pv-group">
                   <span className="pv-label">COLORE — {colorName}</span>

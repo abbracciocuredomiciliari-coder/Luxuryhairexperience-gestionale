@@ -139,5 +139,6 @@
 }
 .lx .pv-custom input { width: 150%; height: 150%; margin: -25%; cursor: pointer; }
 .lx .pv-hold { margin-top: 4px; }
+.lx .pv-hint { font-size: 10px; color: var(--muted); font-style: italic; }
 .lx .pv-status { font-size: 12px; color: var(--muted); margin-top: 18px; font-style: italic; }
 @media (max-width: 900px) { .lx .pv-main { grid-template-columns: 1fr; } }
