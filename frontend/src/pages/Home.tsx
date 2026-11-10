@@ -153,8 +153,8 @@ export default function Home() {
           <div className="hero-videos">
             {[
               { src: '/assets/luxury-129870.mp4', poster: '/assets/luxury-129870-foto-2.jpg' },
+              { src: '/assets/luxury-129876.mp4', poster: '/assets/luxury-129876-foto-2.jpg' },
               { src: '/assets/luxury-129878.mp4', poster: '/assets/luxury-129878-foto-2.jpg' },
-              { src: '/assets/luxury-129870.mp4', poster: '/assets/luxury-129870-foto-2.jpg' },
             ].map((v, i) => (
               <video key={i} ref={i === 0 ? videoRef : undefined} autoPlay muted loop playsInline preload="metadata" poster={v.poster} aria-label={i === 0 ? 'Lavorazioni Luxury Hair Experience senza inquadrature dei visi' : undefined} aria-hidden={i > 0 || undefined}>
                 <source src={v.src} type="video/mp4" />
