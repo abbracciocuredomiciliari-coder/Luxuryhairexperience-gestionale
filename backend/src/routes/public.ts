@@ -266,4 +266,50 @@ router.post('/accesso-cartella', async (req, res) => {
   });
 });
 
+// ── Prova AI armocromia (Gemini Image) ──────────────────────────────────────
+// POST /api/public/prova-ai { image: dataURL, prompt } → { image: dataURL }
+// La foto transita solo in memoria: mai salvata su disco o DB.
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent';
+const aiTentativi = new Map<string, { n: number; reset: number }>();
+const AI_LIMITE_ORA = 12; // prove per IP all'ora (costo ~€0,035/immagine)
+
+router.post('/prova-ai', async (req, res) => {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return res.status(503).json({ message: 'Prova AI non configurata (manca GEMINI_API_KEY)' });
+
+  const ip = req.ip || 'anon';
+  const now = Date.now();
+  const rec = aiTentativi.get(ip) || { n: 0, reset: now + 3600_000 };
+  if (now > rec.reset) { rec.n = 0; rec.reset = now + 3600_000; }
+  if (rec.n >= AI_LIMITE_ORA) return res.status(429).json({ message: 'Limite di prove raggiunto, riprova più tardi' });
+
+  const { image, prompt } = req.body || {};
+  const m = /^data:image\/(jpeg|png|webp);base64,(.+)$/.exec(String(image || ''));
+  const testo = String(prompt || '').slice(0, 500);
+  if (!m || !testo) return res.status(400).json({ message: 'Immagine e istruzione obbligatorie' });
+  if (m[2].length > 6_000_000) return res.status(413).json({ message: 'Immagine troppo grande' });
+
+  rec.n++; aiTentativi.set(ip, rec);
+  try {
+    const r = await fetch(GEMINI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({
+        contents: [{ parts: [
+          { text: `${testo}. Mantieni identico il volto, lo sfondo e l'inquadratura: modifica solo quanto richiesto, risultato fotorealistico.` },
+          { inline_data: { mime_type: `image/${m[1]}`, data: m[2] } },
+        ] }],
+      }),
+    });
+    const data: any = await r.json();
+    if (!r.ok) return res.status(502).json({ message: data?.error?.message || 'Errore del servizio AI' });
+    const part = (data?.candidates?.[0]?.content?.parts || []).find((p: any) => p.inlineData || p.inline_data);
+    const out = part?.inlineData || part?.inline_data;
+    if (!out?.data) return res.status(502).json({ message: 'Il servizio AI non ha restituito un\'immagine' });
+    res.json({ image: `data:${out.mimeType || out.mime_type || 'image/png'};base64,${out.data}` });
+  } catch {
+    res.status(502).json({ message: 'Servizio AI non raggiungibile' });
+  }
+});
+
 export default router;

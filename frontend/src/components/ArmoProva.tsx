@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ImageSegmenter } from '@mediapipe/tasks-vision';
 
 type Stagione = {
   id: string; label: string; sottotitolo: string; metallo: string;
@@ -63,6 +64,9 @@ export default function ArmoProva() {
     { ...STAGIONI[0].colori[0], stagione: STAGIONI[0].label });
   const [cam, setCam] = useState(false);
   const [camErr, setCamErr] = useState('');
+  const [risultato, setRisultato] = useState('');
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiErr, setAiErr] = useState('');
   const fileRef = useRef<HTMLInputElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -119,6 +123,91 @@ export default function ArmoProva() {
   };
 
   const tuttiIColori = STAGIONI.flatMap(s => s.colori.map(c => ({ ...c, stagione: s.label })));
+
+  // ── Recoloring sul dispositivo (MediaPipe SelfieSegmenter) ──
+  // La foto non esce mai dal dispositivo: niente server, niente API a pagamento.
+  // Classi del modello: 0 sfondo · 1 capelli · 2 pelle corpo · 3 viso · 4 vestiti · 5 altro
+  const AI_CAPELLI = [
+    { nome: 'Rame', hex: '#a34d21' },
+    { nome: 'Biondo miele', hex: '#c9984f' },
+    { nome: 'Castano cioccolato', hex: '#4a2e1c' },
+    { nome: 'Nero corvino', hex: '#17130f' },
+    { nome: 'Rosa pastello', hex: '#e8a7b8' },
+  ];
+
+  const segRef = useRef<ImageSegmenter | null>(null);
+  const getSegmenter = async () => {
+    if (!segRef.current) {
+      const { FilesetResolver, ImageSegmenter } = await import('@mediapipe/tasks-vision');
+      const vision = await FilesetResolver.forVisionTasks('/assets/vision-wasm');
+      try {
+        segRef.current = await ImageSegmenter.createFromOptions(vision, {
+          baseOptions: { modelAssetPath: '/assets/selfie_multiclass_256x256.tflite', delegate: 'GPU' },
+          runningMode: 'IMAGE', outputCategoryMask: true, outputConfidenceMasks: false,
+        });
+      } catch {
+        segRef.current = await ImageSegmenter.createFromOptions(vision, {
+          baseOptions: { modelAssetPath: '/assets/selfie_multiclass_256x256.tflite' },
+          runningMode: 'IMAGE', outputCategoryMask: true, outputConfidenceMasks: false,
+        });
+      }
+    }
+    return segRef.current;
+  };
+
+  const hexToHsl = (hex: string): [number, number, number] => {
+    const r = parseInt(hex.slice(1, 3), 16) / 255, g = parseInt(hex.slice(3, 5), 16) / 255, b = parseInt(hex.slice(5, 7), 16) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+    if (mx === mn) return [0, 0, l];
+    const d = mx - mn, s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn);
+    const h = mx === r ? ((g - b) / d + (g < b ? 6 : 0)) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [h * 60, s, l];
+  };
+  const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
+    const a = s * Math.min(l, 1 - l);
+    const f = (n: number) => { const k = (n + h / 30) % 12; return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); };
+    return [f(0) * 255, f(8) * 255, f(4) * 255];
+  };
+
+  const provaColore = async (classe: 1 | 4, hex: string) => {
+    if (!foto || aiBusy) return;
+    setAiBusy(true); setAiErr(''); setRisultato('');
+    try {
+      const seg = await getSegmenter();
+      const img = await new Promise<HTMLImageElement>((ok, ko) => {
+        const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = foto;
+      });
+      const res = seg.segment(img);
+      const mask = res.categoryMask; if (!mask) throw new Error('no mask');
+      const mw = mask.width, mh = mask.height;
+      const m = mask.getAsUint8Array();
+
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      const id = ctx.getImageData(0, 0, c.width, c.height);
+      const d = id.data;
+      const [th, ts, tl] = hexToHsl(hex);
+      // per capelli scuri → tinte chiare serve alzare un po' anche la luminosità
+      const liftL = Math.max(0, tl - 0.25) * 0.5;
+
+      for (let y = 0; y < c.height; y++) {
+        const my = Math.min(mh - 1, Math.round(y * mh / c.height)) * mw;
+        for (let x = 0; x < c.width; x++) {
+          if (m[my + Math.min(mw - 1, Math.round(x * mw / c.width))] !== classe) continue;
+          const i = (y * c.width + x) * 4;
+          const mx = Math.max(d[i], d[i + 1], d[i + 2]) / 255, mn = Math.min(d[i], d[i + 1], d[i + 2]) / 255;
+          const [r, g, b] = hslToRgb(th, ts, Math.min(1, (mx + mn) / 2 + liftL));
+          d[i] = r; d[i + 1] = g; d[i + 2] = b;
+        }
+      }
+      ctx.putImageData(id, 0, 0);
+      setRisultato(c.toDataURL('image/jpeg', 0.88));
+    } catch {
+      setAiErr('Recoloring non riuscito su questa foto: prova un selfie più nitido e frontale.');
+    } finally { setAiBusy(false); }
+  };
 
   return (
     <section className="section armo-prova" id="prova-palette">
@@ -177,10 +266,16 @@ export default function ArmoProva() {
           ) : (
             <div className="armo-drape-wrap" style={{ background: drape.hex }}>
               <div className="armo-face">
-                <img src={foto} alt="La tua foto per il test colori" />
+                <img src={risultato || foto} alt="La tua foto per il test colori" />
+                {risultato && (
+                  <div className="armo-ai-toggle">
+                    <button className="armo-change" onClick={() => setRisultato('')}>← Originale</button>
+                    <span className="armo-ai-badge">✦ Ricolorata</span>
+                  </div>
+                )}
                 <div className="armo-change-row">
                   <button className="armo-change" onClick={apriCam}>Rifai la foto</button>
-                  <button className="armo-change" onClick={() => { setFoto(''); }}>Cambia foto</button>
+                  <button className="armo-change" onClick={() => { setFoto(''); setRisultato(''); }}>Cambia foto</button>
                 </div>
               </div>
               {/* colletto di drappi: tutti i colori della stagione attaccati al mento */}
@@ -222,6 +317,36 @@ export default function ArmoProva() {
               ))}
             </div>
           </div>
+
+          {/* Recoloring capelli e abito — tutto sul dispositivo */}
+          {foto && (
+            <div className="armo-ai">
+              <span className="armo-all-label">✦ Cambia davvero capelli e abito sulla tua foto — la foto resta sul dispositivo</span>
+              <div className="armo-ai-row">
+                <span className="armo-ai-cat">CAPELLI</span>
+                {AI_CAPELLI.map(c => (
+                  <button key={c.nome} className="armo-ai-btn" disabled={aiBusy}
+                    onClick={() => provaColore(1, c.hex)}>
+                    <i className="armo-ai-dot" style={{ background: c.hex }} />{c.nome}
+                  </button>
+                ))}
+              </div>
+              <div className="armo-ai-row">
+                <span className="armo-ai-cat">ABITO</span>
+                <button className="armo-ai-btn" disabled={aiBusy} onClick={() => provaColore(4, drape.hex)}>
+                  <i className="armo-ai-dot" style={{ background: drape.hex }} />Indossa {drape.nome.toLowerCase()}
+                </button>
+                <button className="armo-ai-btn" disabled={aiBusy} onClick={() => provaColore(4, '#f5f2ec')}>
+                  <i className="armo-ai-dot" style={{ background: '#f5f2ec' }} />Indossa bianco
+                </button>
+                <button className="armo-ai-btn" disabled={aiBusy} onClick={() => provaColore(4, '#17130f')}>
+                  <i className="armo-ai-dot" style={{ background: '#17130f' }} />Indossa nero
+                </button>
+              </div>
+              {aiBusy && <p className="armo-ai-status">Analizzo e ricoloro la foto sul tuo dispositivo… il primo avvio scarica il modello.</p>}
+              {aiErr && <p className="armo-err">{aiErr}</p>}
+            </div>
+          )}
         </div>
       </div>
 

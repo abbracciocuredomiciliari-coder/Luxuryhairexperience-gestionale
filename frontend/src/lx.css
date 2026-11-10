@@ -128,6 +128,24 @@
 .lx .armo-all-label { font-size: 11px; color: var(--muted); letter-spacing: .4px; display: block; margin-bottom: 10px; }
 .lx .armo-strip { display: flex; gap: 8px; flex-wrap: wrap; }
 .lx .armo-strip .armo-sw { width: 30px; height: 30px; }
+.lx .armo-ai { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.lx .armo-ai-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 10px 0 8px; }
+.lx .armo-ai-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; border: 1px solid #0002; }
+.lx .armo-ai-cat {
+  font-size: 9px; letter-spacing: 1.5px; color: var(--gold);
+  min-width: 52px; font-weight: 700;
+}
+.lx .armo-ai-btn {
+  border: 1px solid #c9bda3; background: transparent; color: var(--ink);
+  font-size: 11px; padding: 7px 12px; cursor: pointer; letter-spacing: .3px;
+}
+.lx .armo-ai-btn:hover:not(:disabled) { border-color: var(--gold); background: var(--gold); color: #fff; }
+.lx .armo-ai-btn:disabled { opacity: .4; cursor: not-allowed; }
+.lx .armo-ai-status { font-size: 11px; color: var(--gold); font-style: italic; margin: 6px 0 0; }
+.lx .armo-ai-toggle { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; align-items: center; }
+.lx .armo-ai-badge {
+  background: var(--gold); color: #fff; font-size: 10px; padding: 7px 12px; letter-spacing: .5px;
+}
 .lx .armo-note {
   margin-top: 26px; font-size: 11px; color: var(--muted); max-width: 640px;
   line-height: 1.75; font-style: italic;
