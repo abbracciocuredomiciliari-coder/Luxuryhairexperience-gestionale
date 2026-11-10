@@ -110,8 +110,15 @@ export default function Home() {
   const toggleVideo = () => {
     const v = videoRef.current;
     if (!v) return;
-    if (v.paused) { v.play(); setVideoOn(true); } else { v.pause(); setVideoOn(false); }
+    if (v.paused) { setVideoOn(true); } else { setVideoOn(false); }
   };
+
+  // il pulsante play/pausa sincronizza tutti i pannelli del triptych
+  useEffect(() => {
+    document.querySelectorAll<HTMLVideoElement>('.hero-videos video').forEach(v => {
+      if (videoOn) v.play().catch(() => {}); else v.pause();
+    });
+  }, [videoOn]);
 
   return (
     <div className="lx">
@@ -141,9 +148,19 @@ export default function Home() {
         {/* HERO con video */}
         <section className="hero" id="home" aria-label="Benvenuti in Luxury Hair Experience">
           <img className="hero-poster" src="/assets/luxury-129878-foto-2.jpg" alt="Capelli luminosi e curati" />
-          <video ref={videoRef} autoPlay muted loop playsInline preload="metadata" poster="/assets/luxury-129870-foto-2.jpg" aria-label="Lavorazioni Luxury Hair Experience senza inquadrature dei visi">
-            <source src="/assets/luxury-montaggio.mp4" type="video/mp4" />
-          </video>
+          {/* triptych: 3 pannelli video 9:16 affiancati — solo le lavorazioni
+              "pulite" (onde e ricci), niente clip ravvicinate di mani/capelli */}
+          <div className="hero-videos">
+            {[
+              { src: '/assets/luxury-129870.mp4', poster: '/assets/luxury-129870-foto-2.jpg' },
+              { src: '/assets/luxury-129878.mp4', poster: '/assets/luxury-129878-foto-2.jpg' },
+              { src: '/assets/luxury-129870.mp4', poster: '/assets/luxury-129870-foto-2.jpg' },
+            ].map((v, i) => (
+              <video key={i} ref={i === 0 ? videoRef : undefined} autoPlay muted loop playsInline preload="metadata" poster={v.poster} aria-label={i === 0 ? 'Lavorazioni Luxury Hair Experience senza inquadrature dei visi' : undefined} aria-hidden={i > 0 || undefined}>
+                <source src={v.src} type="video/mp4" />
+              </video>
+            ))}
+          </div>
           <div className="hero-shade"></div>
           <div className="hero-copy">
             <p className="eyebrow light">LUXURY HAIR EXPERIENCE · ROMA</p>
