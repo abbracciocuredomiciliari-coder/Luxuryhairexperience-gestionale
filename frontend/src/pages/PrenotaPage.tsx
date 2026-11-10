@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../api';
+import SiteHeader from '../components/SiteHeader';
 
 const dstr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
@@ -23,7 +25,16 @@ export default function PrenotaPage() {
   const [accessoMsg, setAccessoMsg] = useState('');
   const [accessoLink, setAccessoLink] = useState('');
 
+  const [searchParams] = useSearchParams();
+  const servizioParam = searchParams.get('servizio');
   useEffect(() => { api.get('/public/services').then(r => setServizi(r.data || [])).catch(() => {}); }, []);
+  // Arrivo dalla vetrina con un servizio già scelto (?servizio=<id>)
+  useEffect(() => {
+    if (servizioParam && servizi.length) {
+      const s = servizi.find(x => x._id === servizioParam);
+      if (s && s._id !== servizio?._id) setServizio(s);
+    }
+  }, [servizioParam, servizi]);
   useEffect(() => {
     if (!servizio) return;
     setSlots([]); setOra('');
@@ -60,15 +71,7 @@ export default function PrenotaPage() {
 
   return (
     <div className="site-shell">
-      <header className="site-header">
-        <div className="logo">LUXURY HAIR EXPERIENCE</div>
-        <nav className="site-nav">
-          <a href="/" className="on">Prenota</a>
-          <a href="/shop">Shop</a>
-          <a href="/cartella">La mia cartella</a>
-          <a href="/gestionale/login" style={{ fontSize: 11, color: '#a8c7b8' }}>Area riservata</a>
-        </nav>
-      </header>
+      <SiteHeader attivo="prenota" />
 
       <div className="site-hero">
         <h1>Prenota il tuo appuntamento</h1>

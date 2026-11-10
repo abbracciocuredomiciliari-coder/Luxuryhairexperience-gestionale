@@ -17,6 +17,7 @@ import Operatori from './pages/Operatori';
 import PrenotaPage from './pages/PrenotaPage';
 import CartellaPubblica from './pages/CartellaPubblica';
 import Shop from './pages/Shop';
+import Home from './pages/Home';
 
 const NAV: { sez?: string; to?: string; label?: string; icon?: string; soloAdmin?: boolean }[] = [
   { sez: 'Salone' },
@@ -88,8 +89,8 @@ function Shell({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Routes>
-      {/* Sito pubblico: prenotazioni + cartella cliente */}
-      <Route path="/" element={<PrenotaPage />} />
+      {/* Sito pubblico: vetrina, prenotazioni, shop, cartella cliente */}
+      <Route path="/" element={<Home />} />
       <Route path="/prenota" element={<PrenotaPage />} />
       <Route path="/shop" element={<Shop />} />
       <Route path="/cartella" element={<CartellaPubblica />} />

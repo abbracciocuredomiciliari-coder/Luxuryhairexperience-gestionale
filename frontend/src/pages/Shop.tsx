@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
+import SiteHeader from '../components/SiteHeader';
 
 const euro = (c: number) => `€ ${(c / 100).toFixed(2)}`;
 
@@ -53,15 +54,7 @@ export default function Shop() {
 
   return (
     <div className="site-shell">
-      <header className="site-header">
-        <div className="logo">LUXURY HAIR EXPERIENCE</div>
-        <nav className="site-nav">
-          <a href="/">Prenota</a>
-          <a href="/shop" className="on">Shop</a>
-          <a href="/cartella">La mia cartella</a>
-          <a href="/gestionale/login" style={{ fontSize: 11, color: '#a8c7b8' }}>Area riservata</a>
-        </nav>
-      </header>
+      <SiteHeader attivo="shop" />
 
       <div className="site-hero">
         <h1>Boutique Luxury</h1>

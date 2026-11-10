@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import api from '../api';
+import SiteHeader from '../components/SiteHeader';
 
 const fmtData = (d: string) => new Date(d).toLocaleString('it-IT', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 const TAG: Record<string, { t: string; c: string }> = {
@@ -32,17 +33,9 @@ export default function CartellaPubblica() {
 
   return (
     <div className="site-shell">
-      <header className="site-header">
-        <div className="logo">LUXURY HAIR EXPERIENCE</div>
-        <nav className="site-nav">
-          <Link to="/">Prenota</Link>
-          <Link to="/shop">Shop</Link>
-          <Link to="/cartella" className="on">La mia cartella</Link>
-          <Link to="/gestionale/login" style={{ fontSize: 11, color: '#a8c7b8' }}>Area riservata</Link>
-        </nav>
-      </header>
+      <SiteHeader attivo="cartella" />
       <div className="site-wrap" style={{ maxWidth: 720 }}>
-        {err && <div className="mPanel"><div className="err">{err}</div><p className="small mt">Richiedi un nuovo link di accesso dalla <Link to="/" style={{ color: 'var(--forest)', fontWeight: 700 }}>pagina prenotazioni</Link>.</p></div>}
+        {err && <div className="mPanel"><div className="err">{err}</div><p className="small mt">Richiedi un nuovo link di accesso dalla <Link to="/prenota" style={{ color: 'var(--forest)', fontWeight: 700 }}>pagina prenotazioni</Link>.</p></div>}
         {data && (
           <div className="fade-in">
             <div className="mPanel tac">
