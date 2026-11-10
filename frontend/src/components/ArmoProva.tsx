@@ -183,6 +183,16 @@ export default function ArmoProva() {
                   <button className="armo-change" onClick={() => { setFoto(''); }}>Cambia foto</button>
                 </div>
               </div>
+              {/* colletto di drappi: tutti i colori della stagione attaccati al mento */}
+              <div className="armo-collar" role="group" aria-label="Tessuti sotto il viso">
+                {stagione.colori.map(c => (
+                  <button key={c.nome}
+                    className={`armo-collar-sw ${c.nome === drape.nome ? 'sel' : ''}`}
+                    style={{ background: c.hex }} title={c.nome}
+                    aria-label={`Drappo ${c.nome}`}
+                    onClick={() => setDrape({ ...c, stagione: stagione.label })} />
+                ))}
+              </div>
               <span className="armo-drape-name">{drape.nome} · {drape.stagione}</span>
             </div>
           )}
