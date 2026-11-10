@@ -10,3 +10,84 @@
 @media (max-width: 760px) {
   .lx .hero video { object-position: center; }
 }
+
+/* ── Prova palette armocromia (interattivo) ── */
+.lx .armo-prova { padding-top: 80px; padding-bottom: 80px; }
+.lx .armo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+.lx .armo-panel { background: #efe9dd; border: 1px solid var(--line); padding: 30px; }
+.lx .armo-tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 22px; }
+.lx .armo-tabs button {
+  border: 1px solid #d6cdba; background: transparent; padding: 10px 18px;
+  font-size: 12px; letter-spacing: .6px; cursor: pointer; color: var(--ink);
+}
+.lx .armo-tabs button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.lx .armo-stagione h3 { font-size: 30px; }
+.lx .armo-sub { font: 11px Arial, sans-serif; color: var(--muted); letter-spacing: 1px; margin-left: 10px; }
+.lx .armo-palette { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0; }
+.lx .armo-sw {
+  width: 38px; height: 38px; border-radius: 50%; border: 3px solid #fff;
+  box-shadow: 0 2px 8px #00000022; cursor: pointer; padding: 0;
+  transition: transform .15s;
+}
+.lx .armo-sw:hover { transform: scale(1.15); }
+.lx .armo-sw.sel { outline: 2px solid var(--ink); outline-offset: 2px; }
+.lx .armo-desc { font-size: 13px; color: var(--muted); line-height: 1.75; }
+.lx .armo-meta { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; font-size: 12px; color: var(--ink); }
+.lx .armo-foto { display: flex; flex-direction: column; position: relative; }
+.lx .armo-upload-box {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; border: 2px dashed #c7bba4; background: #f4f0e8; padding: 40px 24px;
+  flex: 1; color: var(--ink); text-align: center;
+}
+.lx .armo-upload-box:hover { border-color: var(--gold); }
+.lx .armo-upload-icon { font-size: 30px; color: var(--gold); }
+.lx .armo-upload-box small { color: var(--muted); font-size: 11px; line-height: 1.7; }
+.lx .armo-upload-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+.lx .armo-btn {
+  display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--ink);
+  background: var(--ink); color: #fff; font-size: 12px; letter-spacing: .5px;
+  padding: 12px 18px; cursor: pointer;
+}
+.lx .armo-btn:hover { background: var(--gold); border-color: var(--gold); color: #26221a; }
+.lx .armo-btn.ghost { background: transparent; color: var(--ink); }
+.lx .armo-btn.ghost:hover { border-color: var(--gold); color: var(--gold); background: transparent; }
+.lx .armo-btn-ico { color: var(--gold); font-size: 13px; }
+.lx .armo-btn.ghost .armo-btn-ico { color: var(--gold); }
+.lx .armo-err { font-size: 11px; color: #8a4b2a; max-width: 300px; line-height: 1.6; margin: 0; }
+.lx .armo-cam {
+  position: absolute; inset: 0; z-index: 5; background: #1c1913;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 18px; color: #e7e1d4;
+}
+.lx .armo-cam-video {
+  width: 100%; max-width: 340px; aspect-ratio: 4/3; object-fit: cover;
+  transform: scaleX(-1); border: 1px solid #4a4438; background: #000;
+}
+.lx .armo-cam-btns { display: flex; gap: 10px; }
+.lx .armo-cam .armo-btn.ghost { color: #e7e1d4; border-color: #6d6552; }
+.lx .armo-cam small { font-size: 10px; color: #b9b1a0; letter-spacing: .3px; }
+.lx .armo-change-row { position: absolute; bottom: 10px; left: 10px; display: flex; gap: 6px; }
+.lx .armo-drape-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; flex: 1; min-height: 220px; }
+.lx .armo-face { position: relative; overflow: hidden; background: #dcd4c4; }
+.lx .armo-face img { width: 100%; height: 100%; object-fit: cover; }
+.lx .armo-change {
+  border: 0; background: #000c;
+  color: #fff; font-size: 10px; padding: 7px 12px; cursor: pointer; letter-spacing: .5px;
+}
+.lx .armo-drape {
+  display: flex; align-items: flex-end; padding: 14px;
+  transition: background .3s;
+}
+.lx .armo-drape span {
+  background: #0009; color: #fff; font-size: 11px; padding: 6px 12px; letter-spacing: .5px;
+}
+.lx .armo-all { margin-top: 18px; }
+.lx .armo-all-label { font-size: 11px; color: var(--muted); letter-spacing: .4px; display: block; margin-bottom: 10px; }
+.lx .armo-strip { display: flex; gap: 8px; flex-wrap: wrap; }
+.lx .armo-strip .armo-sw { width: 30px; height: 30px; }
+.lx .armo-note {
+  margin-top: 26px; font-size: 11px; color: var(--muted); max-width: 640px;
+  line-height: 1.75; font-style: italic;
+}
+@media (max-width: 900px) { .lx .armo-grid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .lx .armo-prova { padding: 55px 6%; } .lx .armo-drape-wrap { min-height: 190px; } }

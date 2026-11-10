@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
+import ArmoProva from '../components/ArmoProva';
 import '../lx.css';
 
 // Configurazione media del sito (dal pacchetto sorgente, ruolo gallery/hero).
@@ -218,9 +219,15 @@ export default function Home() {
             <p>La tua palette. La tua luce.</p>
             <p>Dai capelli al guardaroba.<br />Trova la tua armonia.</p>
             <div className="color-steps"><span>01 <b>Scopri la tua palette</b></span><span>02 <b>Immagina il tuo look</b></span><span>03 <b>Lasciati ispirare in boutique</b></span></div>
-            <Link className="button" to="/prenota">Scopri i tuoi colori <span>→</span></Link>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Link className="button" to="/prenota">Scopri i tuoi colori <span>→</span></Link>
+              <a className="text-link" href="#prova-palette">Prova i colori addosso <span>↓</span></a>
+            </div>
           </div>
         </section>
+
+        {/* PROVA PALETTE — interattivo */}
+        <ArmoProva />
 
         {/* BOUTIQUE — catalogo reale */}
         <section className="section boutique" id="boutique">
