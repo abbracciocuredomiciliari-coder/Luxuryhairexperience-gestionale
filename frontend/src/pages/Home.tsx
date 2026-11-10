@@ -110,15 +110,8 @@ export default function Home() {
   const toggleVideo = () => {
     const v = videoRef.current;
     if (!v) return;
-    if (v.paused) { setVideoOn(true); } else { setVideoOn(false); }
+    if (v.paused) { v.play(); setVideoOn(true); } else { v.pause(); setVideoOn(false); }
   };
-
-  // il pulsante play/pausa sincronizza tutti i pannelli del triptych
-  useEffect(() => {
-    document.querySelectorAll<HTMLVideoElement>('.hero-videos video').forEach(v => {
-      if (videoOn) v.play().catch(() => {}); else v.pause();
-    });
-  }, [videoOn]);
 
   return (
     <div className="lx">
@@ -148,14 +141,9 @@ export default function Home() {
         {/* HERO con video */}
         <section className="hero" id="home" aria-label="Benvenuti in Luxury Hair Experience">
           <img className="hero-poster" src="/assets/luxury-129878-foto-2.jpg" alt="Capelli luminosi e curati" />
-          {/* video verticale 9:16 → triptych: 3 pannelli affiancati a piena altezza, nessun taglio */}
-          <div className="hero-videos" aria-hidden={false}>
-            {[0, 1, 2].map(i => (
-              <video key={i} ref={i === 0 ? videoRef : undefined} autoPlay muted loop playsInline preload="metadata" poster="/assets/luxury-129870-foto-2.jpg" aria-label={i === 0 ? 'Lavorazioni Luxury Hair Experience senza inquadrature dei visi' : undefined} aria-hidden={i > 0 || undefined}>
-                <source src="/assets/luxury-montaggio.mp4" type="video/mp4" />
-              </video>
-            ))}
-          </div>
+          <video ref={videoRef} autoPlay muted loop playsInline preload="metadata" poster="/assets/luxury-129870-foto-2.jpg" aria-label="Lavorazioni Luxury Hair Experience senza inquadrature dei visi">
+            <source src="/assets/luxury-montaggio.mp4" type="video/mp4" />
+          </video>
           <div className="hero-shade"></div>
           <div className="hero-copy">
             <p className="eyebrow light">LUXURY HAIR EXPERIENCE · ROMA</p>
