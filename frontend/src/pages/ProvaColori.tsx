@@ -82,6 +82,20 @@ export default function ProvaColori() {
   const uploadRef = useRef<HTMLInputElement | null>(null);
   const selfieRef = useRef<HTMLInputElement | null>(null);
 
+  // foto demo incluse nel sito: per provare subito senza caricare nulla
+  const DEMO = [
+    { nome: 'Chioma lunga', src: '/assets/luxury-129870-foto-2.jpg', nota: 'capelli + top' },
+    { nome: 'Look in città', src: '/assets/dress.jpg', nota: 'vestito intero' },
+    { nome: 'Biondo mosso', src: '/assets/luxury-129878-foto-2.jpg', nota: 'capelli' },
+  ];
+  const caricaDemo = async (src: string, nome: string) => {
+    setStatus(`Carico la foto demo "${nome}"…`);
+    try {
+      const blob = await (await fetch(src)).blob();
+      await load(new File([blob], 'demo.jpg', { type: blob.type || 'image/jpeg' }));
+    } catch { setStatus('Foto demo non disponibile.'); }
+  };
+
   const newMask = (w: number, h: number) => {
     const c = document.createElement('canvas'); c.width = w; c.height = h; return c;
   };
@@ -439,6 +453,17 @@ export default function ProvaColori() {
             <button className="armo-btn ghost" onClick={() => uploadRef.current?.click()}>
               <span className="armo-btn-ico">▤</span> Carica da galleria
             </button>
+          </div>
+          <div className="pv-demos">
+            <span className="pv-label">OPPURE PROVA SUBITO CON UNA FOTO DEMO</span>
+            <div className="pv-demo-row">
+              {DEMO.map(d => (
+                <button key={d.src} className="pv-demo" onClick={() => caricaDemo(d.src, d.nome)}>
+                  <img src={d.src} alt={`Foto demo ${d.nome}`} loading="lazy" />
+                  <span>{d.nome}<small>{d.nota}</small></span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
