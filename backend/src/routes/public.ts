@@ -266,16 +266,29 @@ router.post('/accesso-cartella', async (req, res) => {
   });
 });
 
-// ── Prova AI armocromia (Gemini Image) ──────────────────────────────────────
-// POST /api/public/prova-ai { image: dataURL, prompt } → { image: dataURL }
+// ── Prova AI generativa (tagli, abiti, cambio capo) ─────────────────────────
+// POST /api/public/prova-ai { image: dataURL, prompt, image2?: dataURL } → { image: dataURL }
+// Provider configurabile via env:
+//   AI_IMAGE_PROVIDER=pollinations + POLLINATIONS_TOKEN  (account gratuito)
+//   AI_IMAGE_PROVIDER=gemini       + GEMINI_API_KEY      (a pagamento ~€0,04/img)
 // La foto transita solo in memoria: mai salvata su disco o DB.
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent';
+const AI_PROVIDER = process.env.AI_IMAGE_PROVIDER || 'pollinations';
 const aiTentativi = new Map<string, { n: number; reset: number }>();
-const AI_LIMITE_ORA = 12; // prove per IP all'ora (costo ~€0,035/immagine)
+const AI_LIMITE_ORA = 15; // prove per IP all'ora
+
+function aiProviderAttivo(): 'pollinations' | 'gemini' | null {
+  if (AI_PROVIDER === 'gemini' && process.env.GEMINI_API_KEY) return 'gemini';
+  if (AI_PROVIDER === 'pollinations' && process.env.POLLINATIONS_TOKEN) return 'pollinations';
+  return null;
+}
+
+router.get('/prova-ai-status', (_req, res) => {
+  res.json({ attiva: !!aiProviderAttivo(), provider: aiProviderAttivo() });
+});
 
 router.post('/prova-ai', async (req, res) => {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) return res.status(503).json({ message: 'Prova AI non configurata (manca GEMINI_API_KEY)' });
+  const provider = aiProviderAttivo();
+  if (!provider) return res.status(503).json({ message: 'Prova AI non configurata sul server' });
 
   const ip = req.ip || 'anon';
   const now = Date.now();
@@ -283,30 +296,64 @@ router.post('/prova-ai', async (req, res) => {
   if (now > rec.reset) { rec.n = 0; rec.reset = now + 3600_000; }
   if (rec.n >= AI_LIMITE_ORA) return res.status(429).json({ message: 'Limite di prove raggiunto, riprova più tardi' });
 
-  const { image, prompt } = req.body || {};
+  const { image, image2, prompt } = req.body || {};
   const m = /^data:image\/(jpeg|png|webp);base64,(.+)$/.exec(String(image || ''));
-  const testo = String(prompt || '').slice(0, 500);
+  const testo = String(prompt || '').slice(0, 600);
   if (!m || !testo) return res.status(400).json({ message: 'Immagine e istruzione obbligatorie' });
   if (m[2].length > 6_000_000) return res.status(413).json({ message: 'Immagine troppo grande' });
+  const m2 = image2 ? /^data:image\/(jpeg|png|webp);base64,(.+)$/.exec(String(image2)) : null;
+  if (image2 && !m2) return res.status(400).json({ message: 'Seconda immagine non valida' });
 
   rec.n++; aiTentativi.set(ip, rec);
+  const ISTR = `${testo}. Mantieni identici il volto, la pelle, lo sfondo e l'inquadratura: modifica solo quanto richiesto, risultato fotorealistico.`;
   try {
-    const r = await fetch(GEMINI_URL, {
+    if (provider === 'gemini') {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY! },
+        body: JSON.stringify({
+          contents: [{ parts: [
+            { text: ISTR },
+            { inline_data: { mime_type: `image/${m[1]}`, data: m[2] } },
+            ...(m2 ? [{ inline_data: { mime_type: `image/${m2[1]}`, data: m2[2] } }] : []),
+          ] }],
+        }),
+      });
+      const data: any = await r.json();
+      if (!r.ok) return res.status(502).json({ message: data?.error?.message || 'Errore del servizio AI' });
+      const part = (data?.candidates?.[0]?.content?.parts || []).find((p: any) => p.inlineData || p.inline_data);
+      const out = part?.inlineData || part?.inline_data;
+      if (!out?.data) return res.status(502).json({ message: 'Il servizio AI non ha restituito un\'immagine' });
+      return res.json({ image: `data:${out.mimeType || out.mime_type || 'image/png'};base64,${out.data}` });
+    }
+
+    // Pollinations (OpenAI-compatible image edits, multipart)
+    const form = new FormData();
+    form.append('model', process.env.POLLINATIONS_MODEL || 'kontext');
+    form.append('prompt', ISTR);
+    const buf = Buffer.from(m[2], 'base64');
+    form.append('image', new Blob([buf], { type: `image/${m[1]}` }), 'foto.jpg');
+    if (m2) form.append('image', new Blob([Buffer.from(m2[2], 'base64')], { type: `image/${m2[1]}` }), 'capo.jpg');
+    const r = await fetch('https://gen.pollinations.ai/v1/images/edits', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({
-        contents: [{ parts: [
-          { text: `${testo}. Mantieni identico il volto, lo sfondo e l'inquadratura: modifica solo quanto richiesto, risultato fotorealistico.` },
-          { inline_data: { mime_type: `image/${m[1]}`, data: m[2] } },
-        ] }],
-      }),
+      headers: { Authorization: `Bearer ${process.env.POLLINATIONS_TOKEN}` },
+      body: form,
     });
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      return res.status(502).json({ message: `Servizio AI: ${t.slice(0, 160) || r.statusText}` });
+    }
     const data: any = await r.json();
-    if (!r.ok) return res.status(502).json({ message: data?.error?.message || 'Errore del servizio AI' });
-    const part = (data?.candidates?.[0]?.content?.parts || []).find((p: any) => p.inlineData || p.inline_data);
-    const out = part?.inlineData || part?.inline_data;
-    if (!out?.data) return res.status(502).json({ message: 'Il servizio AI non ha restituito un\'immagine' });
-    res.json({ image: `data:${out.mimeType || out.mime_type || 'image/png'};base64,${out.data}` });
+    const b64 = data?.data?.[0]?.b64_json;
+    const url = data?.data?.[0]?.url;
+    if (b64) return res.json({ image: `data:image/png;base64,${b64}` });
+    if (url) {
+      const ir = await fetch(url);
+      const ab = Buffer.from(await ir.arrayBuffer());
+      const ct = ir.headers.get('content-type') || 'image/jpeg';
+      return res.json({ image: `data:${ct};base64,${ab.toString('base64')}` });
+    }
+    res.status(502).json({ message: 'Il servizio AI non ha restituito un\'immagine' });
   } catch {
     res.status(502).json({ message: 'Servizio AI non raggiungibile' });
   }

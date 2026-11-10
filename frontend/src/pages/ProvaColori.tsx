@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import SiteHeader from '../components/SiteHeader';
+import api from '../api';
 import type { ImageSegmenter } from '@mediapipe/tasks-vision';
 
 /* ── Motore colore (dal pacchetto sorgente): ricolorazione con maschera alfa
@@ -73,6 +74,11 @@ export default function ProvaColori() {
   const [brushMode, setBrushMode] = useState<'paint' | 'erase'>('paint');
   const [status, setStatus] = useState('Carica una foto dalla galleria o scatta un selfie.');
   const [aiBusy, setAiBusy] = useState(false);
+  const [aiGenOn, setAiGenOn] = useState(false);
+  const [aiGenBusy, setAiGenBusy] = useState(false);
+  const [consensoAi, setConsensoAi] = useState(false);
+  const [prodotti, setProdotti] = useState<{ _id: string; nome: string; immagine?: string; categoria?: string }[]>([]);
+  const [capo, setCapo] = useState('');
   const uploadRef = useRef<HTMLInputElement | null>(null);
   const selfieRef = useRef<HTMLInputElement | null>(null);
 
@@ -99,6 +105,82 @@ export default function ProvaColori() {
     ctx.putImageData(new ImageData(recolor(image.data, mask.data, color, intensity / 100), base.width, base.height), 0, 0);
   };
   useEffect(render, [color, intensity, target, caricata]);
+
+  // ── AI generativa (extra): attiva solo se il server è configurato ──
+  useEffect(() => {
+    api.get('/public/prova-ai-status').then(r => setAiGenOn(!!r.data?.attiva)).catch(() => {});
+    api.get('/public/shop').then(r => setProdotti(r.data || [])).catch(() => {});
+  }, []);
+
+  const TAGLI = [
+    { nome: 'Bob lungo', prompt: 'Cambia il taglio di capelli della persona in un long bob (lob) liscio e curato' },
+    { nome: 'Lunghi scalati', prompt: 'Cambia il taglio di capelli della persona in capelli lunghi scalati con movimento' },
+    { nome: 'Frangetta', prompt: 'Aggiungi una frangetta piena e curata ai capelli della persona' },
+    { nome: 'Pixie', prompt: 'Cambia il taglio di capelli della persona in un pixie cut corto elegante' },
+    { nome: 'Raccolto', prompt: 'Cambia l\'acconciatura della persona in un raccolto elegante da sera' },
+  ];
+
+  const ridimensionaCanvas = (c: HTMLCanvasElement, max = 1024): string => {
+    const k = Math.min(1, max / Math.max(c.width, c.height));
+    if (k >= 1) return c.toDataURL('image/jpeg', 0.88);
+    const o = document.createElement('canvas');
+    o.width = Math.round(c.width * k); o.height = Math.round(c.height * k);
+    o.getContext('2d')!.drawImage(c, 0, 0, o.width, o.height);
+    return o.toDataURL('image/jpeg', 0.88);
+  };
+
+  const imgToDataUrl = (src: string): Promise<string> => new Promise(ok => {
+    const i = new Image(); i.crossOrigin = 'anonymous';
+    i.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = i.naturalWidth; c.height = i.naturalHeight;
+      c.getContext('2d')!.drawImage(i, 0, 0);
+      try { ok(c.toDataURL('image/jpeg', 0.85)); } catch { ok(''); }
+    };
+    i.onerror = () => ok('');
+    i.src = src;
+  });
+
+  const provaGen = async (prompt: string, image2?: string) => {
+    const base = baseRef.current;
+    if (!base?.width || !consensoAi || aiGenBusy) return;
+    setAiGenBusy(true);
+    setStatus('Il servizio AI sta elaborando la foto… 10-30 secondi.');
+    try {
+      const { data } = await api.post('/public/prova-ai', {
+        image: ridimensionaCanvas(base),
+        image2,
+        prompt,
+      });
+      if (!data?.image) throw new Error('empty');
+      const img = await new Promise<HTMLImageElement>((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = data.image; });
+      // il risultato diventa la nuova foto di lavoro: maschere azzerate
+      const w = Math.min(1200, img.naturalWidth), h = Math.round(img.naturalHeight * w / img.naturalWidth);
+      base.width = w; base.height = h;
+      base.getContext('2d')!.drawImage(img, 0, 0, w, h);
+      const canvas = canvasRef.current!;
+      canvas.width = w; canvas.height = h;
+      masksRef.current = { hair: newMask(w, h), clothes: newMask(w, h) };
+      beforeRef.current = false; maskViewRef.current = false;
+      render();
+      setStatus('Fatto! Puoi applicare un altro effetto o ricolorare la nuova foto.');
+    } catch (e: any) {
+      setStatus(e?.response?.data?.message || 'Prova AI non riuscita, riprova tra poco.');
+    } finally { setAiGenBusy(false); }
+  };
+
+  const indossaCapo = async () => {
+    const p = prodotti.find(x => x._id === capo);
+    if (!p) return;
+    let ref = '';
+    if (p.immagine) ref = await imgToDataUrl(p.immagine);
+    provaGen(
+      ref
+        ? `Fai indossare alla persona il capo mostrato nella seconda immagine (${p.nome}), sostituendo il suo indumento superiore in modo realistico`
+        : `Cambia l'indumento superiore della persona in: ${p.nome}${p.categoria ? `, tipo ${p.categoria}` : ''}`,
+      ref || undefined,
+    );
+  };
 
   // ── caricamento foto (galleria o fotocamera) — tutto locale ──
   const load = async (file?: File) => {
@@ -426,6 +508,35 @@ export default function ProvaColori() {
                   <button className="armo-ai-btn" {...hold('mask')}>Mostra zona</button>
                   <button className="armo-ai-btn" {...hold('before')}>Tieni premuto: prima</button>
                 </div>
+
+                {/* AI generativa extra — tagli e capi boutique (foto inviata al servizio) */}
+                {aiGenOn && (
+                  <div className="pv-group pv-gen">
+                    <span className="pv-label">✦ PROVA AI — TAGLI E CAPO BOUTIQUE</span>
+                    <label className="pv-consent">
+                      <input type="checkbox" checked={consensoAi} onChange={e => setConsensoAi(e.target.checked)} />
+                      <span>Acconsento: per queste prove la foto viene inviata una volta al servizio AI configurato e non viene salvata.</span>
+                    </label>
+                    <div className="pv-row">
+                      {TAGLI.map(t => (
+                        <button key={t.nome} className="armo-ai-btn" disabled={!consensoAi || aiGenBusy}
+                          onClick={() => provaGen(t.prompt)}>{t.nome}</button>
+                      ))}
+                    </div>
+                    {!!prodotti.length && (
+                      <div className="pv-row pv-shop-row">
+                        <select className="pv-select" value={capo} onChange={e => setCapo(e.target.value)}
+                          aria-label="Capo della boutique da indossare">
+                          <option value="">Scegli un capo della boutique…</option>
+                          {prodotti.map(p => <option key={p._id} value={p._id}>{p.nome}</option>)}
+                        </select>
+                        <button className="armo-ai-btn" disabled={!consensoAi || aiGenBusy || !capo}
+                          onClick={indossaCapo}>Indossalo</button>
+                      </div>
+                    )}
+                    {aiGenBusy && <small className="pv-hint">Elaborazione in corso…</small>}
+                  </div>
+                )}
               </div>
             </div>
           </div>
