@@ -67,9 +67,16 @@
 .lx .armo-cam .armo-btn.ghost { color: #e7e1d4; border-color: #6d6552; }
 .lx .armo-cam small { font-size: 10px; color: #b9b1a0; letter-spacing: .3px; }
 .lx .armo-change-row { position: absolute; bottom: 10px; left: 10px; display: flex; gap: 6px; }
-.lx .armo-drape-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; flex: 1; min-height: 220px; }
-.lx .armo-face { position: relative; overflow: hidden; background: #dcd4c4; }
+.lx .armo-drape-wrap {
+  flex: 1; min-height: 300px; padding: 26px; transition: background .3s;
+  display: flex; flex-direction: column; gap: 0; position: relative;
+}
+.lx .armo-face { position: relative; overflow: hidden; background: #dcd4c4; flex: 1; }
 .lx .armo-face img { width: 100%; height: 100%; object-fit: cover; }
+.lx .armo-drape-name {
+  margin-top: 10px; align-self: center; background: #000a; color: #fff;
+  font-size: 11px; padding: 6px 14px; letter-spacing: .6px;
+}
 .lx .armo-change {
   border: 0; background: #000c;
   color: #fff; font-size: 10px; padding: 7px 12px; cursor: pointer; letter-spacing: .5px;
@@ -80,6 +87,10 @@
 }
 .lx .armo-drape span {
   background: #0009; color: #fff; font-size: 11px; padding: 6px 12px; letter-spacing: .5px;
+}
+.lx .armo-drape-wrap::after {
+  content: ''; position: absolute; inset: 8px; border: 1px dashed #fff8;
+  pointer-events: none;
 }
 .lx .armo-all { margin-top: 18px; }
 .lx .armo-all-label { font-size: 11px; color: var(--muted); letter-spacing: .4px; display: block; margin-bottom: 10px; }

@@ -59,14 +59,15 @@ const STAGIONI: Stagione[] = [
 export default function ArmoProva() {
   const [stagione, setStagione] = useState<Stagione>(STAGIONI[0]);
   const [foto, setFoto] = useState<string>('');
-  const [drape, setDrape] = useState(STAGIONI[0].colori[0]);
+  const [drape, setDrape] = useState<{ nome: string; hex: string; stagione?: string }>(
+    { ...STAGIONI[0].colori[0], stagione: STAGIONI[0].label });
   const [cam, setCam] = useState(false);
   const [camErr, setCamErr] = useState('');
   const fileRef = useRef<HTMLInputElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const scegliStagione = (s: Stagione) => { setStagione(s); setDrape(s.colori[0]); };
+  const scegliStagione = (s: Stagione) => { setStagione(s); setDrape({ ...s.colori[0], stagione: s.label }); };
 
   const caricaFoto = (f: File | undefined) => {
     if (!f || !f.type.startsWith('image/')) return;
@@ -145,7 +146,7 @@ export default function ArmoProva() {
               {stagione.colori.map(c => (
                 <button key={c.nome} className="armo-sw" style={{ background: c.hex }}
                   title={`${c.nome} — provalo sulla foto`} aria-label={`Colore ${c.nome}`}
-                  onClick={() => setDrape(c)} />
+                  onClick={() => setDrape({ ...c, stagione: stagione.label })} />
               ))}
             </div>
             <p className="armo-desc">{stagione.descrizione}</p>
@@ -174,7 +175,7 @@ export default function ArmoProva() {
               {camErr && <p className="armo-err">{camErr}</p>}
             </div>
           ) : (
-            <div className="armo-drape-wrap">
+            <div className="armo-drape-wrap" style={{ background: drape.hex }}>
               <div className="armo-face">
                 <img src={foto} alt="La tua foto per il test colori" />
                 <div className="armo-change-row">
@@ -182,9 +183,7 @@ export default function ArmoProva() {
                   <button className="armo-change" onClick={() => { setFoto(''); }}>Cambia foto</button>
                 </div>
               </div>
-              <div className="armo-drape" style={{ background: drape.hex }}>
-                <span>{drape.nome}</span>
-              </div>
+              <span className="armo-drape-name">{drape.nome} · {drape.stagione}</span>
             </div>
           )}
           <input ref={fileRef} type="file" accept="image/*" hidden
