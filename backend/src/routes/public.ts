@@ -269,17 +269,17 @@ router.post('/accesso-cartella', async (req, res) => {
 // ── Prova AI generativa (tagli, abiti, cambio capo) ─────────────────────────
 // POST /api/public/prova-ai { image: dataURL, prompt, image2?: dataURL } → { image: dataURL }
 // Provider configurabile via env:
-//   AI_IMAGE_PROVIDER=pollinations + POLLINATIONS_TOKEN  (account gratuito)
-//   AI_IMAGE_PROVIDER=gemini       + GEMINI_API_KEY      (a pagamento ~€0,04/img)
+//   AI_IMAGE_PROVIDER=pollinations (default) — POLLINATIONS_TOKEN opzionale:
+//     con token → tier seed; senza token → livello anonimo gratuito
+//   AI_IMAGE_PROVIDER=gemini + GEMINI_API_KEY (a pagamento ~€0,04/img)
 // La foto transita solo in memoria: mai salvata su disco o DB.
 const AI_PROVIDER = process.env.AI_IMAGE_PROVIDER || 'pollinations';
 const aiTentativi = new Map<string, { n: number; reset: number }>();
 const AI_LIMITE_ORA = 15; // prove per IP all'ora
 
 function aiProviderAttivo(): 'pollinations' | 'gemini' | null {
-  if (AI_PROVIDER === 'gemini' && process.env.GEMINI_API_KEY) return 'gemini';
-  if (AI_PROVIDER === 'pollinations' && process.env.POLLINATIONS_TOKEN) return 'pollinations';
-  return null;
+  if (AI_PROVIDER === 'gemini') return process.env.GEMINI_API_KEY ? 'gemini' : null;
+  return 'pollinations'; // funziona anche senza token (livello anonimo)
 }
 
 router.get('/prova-ai-status', (_req, res) => {
@@ -334,14 +334,19 @@ router.post('/prova-ai', async (req, res) => {
     const buf = Buffer.from(m[2], 'base64');
     form.append('image', new Blob([buf], { type: `image/${m[1]}` }), 'foto.jpg');
     if (m2) form.append('image', new Blob([Buffer.from(m2[2], 'base64')], { type: `image/${m2[1]}` }), 'capo.jpg');
+    const headers: Record<string, string> = {};
+    if (process.env.POLLINATIONS_TOKEN) headers.Authorization = `Bearer ${process.env.POLLINATIONS_TOKEN}`;
     const r = await fetch('https://gen.pollinations.ai/v1/images/edits', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${process.env.POLLINATIONS_TOKEN}` },
+      headers,
       body: form,
     });
     if (!r.ok) {
       const t = await r.text().catch(() => '');
-      return res.status(502).json({ message: `Servizio AI: ${t.slice(0, 160) || r.statusText}` });
+      const msg = r.status === 401 || r.status === 402
+        ? 'Il servizio richiede un token: imposta POLLINATIONS_TOKEN nel backend'
+        : `Servizio AI: ${t.slice(0, 160) || r.statusText}`;
+      return res.status(502).json({ message: msg });
     }
     const data: any = await r.json();
     const b64 = data?.data?.[0]?.b64_json;

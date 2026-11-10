@@ -201,7 +201,7 @@ export default function ProvaColori() {
     const version = ++decodeRef.current;
     if (!file) return;
     if (file.size > 12 * 1024 * 1024) { setStatus('Scegli una foto fino a 12 MB.'); return; }
-    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) { setStatus('Usa una foto JPG, PNG o WebP.'); return; }
+    if (file.type && !file.type.startsWith('image/')) { setStatus('Il file scelto non è una foto.'); return; }
     const url = URL.createObjectURL(file);
     try {
       const image = await new Promise<HTMLImageElement>((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = url; });
@@ -566,7 +566,7 @@ export default function ProvaColori() {
             </div>
           </div>
 
-        <input ref={uploadRef} type="file" accept="image/jpeg,image/png,image/webp" hidden
+        <input ref={uploadRef} type="file" accept="image/*" hidden
           onChange={e => { load(e.target.files?.[0]); e.target.value = ''; }} />
         <input ref={selfieRef} type="file" accept="image/*" capture="user" hidden
           onChange={e => { load(e.target.files?.[0]); e.target.value = ''; }} />
