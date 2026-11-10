@@ -148,16 +148,11 @@ export default function Home() {
         {/* HERO con video */}
         <section className="hero" id="home" aria-label="Benvenuti in Luxury Hair Experience">
           <img className="hero-poster" src="/assets/luxury-129878-foto-2.jpg" alt="Capelli luminosi e curati" />
-          {/* triptych: 3 pannelli video 9:16 affiancati — solo le lavorazioni
-              "pulite" (onde e ricci), niente clip ravvicinate di mani/capelli */}
+          {/* video verticale 9:16 → triptych: 3 pannelli affiancati a piena altezza, nessun taglio */}
           <div className="hero-videos">
-            {[
-              { src: '/assets/luxury-129870.mp4', poster: '/assets/luxury-129870-foto-2.jpg' },
-              { src: '/assets/luxury-129876.mp4', poster: '/assets/luxury-129876-foto-2.jpg' },
-              { src: '/assets/luxury-129878.mp4', poster: '/assets/luxury-129878-foto-2.jpg' },
-            ].map((v, i) => (
-              <video key={i} ref={i === 0 ? videoRef : undefined} autoPlay muted loop playsInline preload="metadata" poster={v.poster} aria-label={i === 0 ? 'Lavorazioni Luxury Hair Experience senza inquadrature dei visi' : undefined} aria-hidden={i > 0 || undefined}>
-                <source src={v.src} type="video/mp4" />
+            {[0, 1, 2].map(i => (
+              <video key={i} ref={i === 0 ? videoRef : undefined} autoPlay muted loop playsInline preload="metadata" poster="/assets/luxury-129870-foto-2.jpg" aria-label={i === 0 ? 'Lavorazioni Luxury Hair Experience senza inquadrature dei visi' : undefined} aria-hidden={i > 0 || undefined}>
+                <source src="/assets/luxury-montaggio.mp4" type="video/mp4" />
               </video>
             ))}
           </div>
