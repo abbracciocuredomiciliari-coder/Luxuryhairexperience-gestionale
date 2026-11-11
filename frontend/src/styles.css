@@ -442,7 +442,7 @@ a.servizio-card:hover { border-color: var(--forest); }
 .lux-welcome button:hover { background: #eef4ee; }
 .lux-msg { max-width: 85%; padding: 9px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; }
 .lux-msg.user { align-self: flex-end; background: #294935; color: #fff; border-bottom-right-radius: 4px; }
-.lux-msg.assistant { align-self: flex-start; background: #f0f4f0; color: #22352a; border-bottom-left-radius: 4px; }
+.lux-msg.lux { align-self: flex-start; background: #f0f4f0; color: #22352a; border-bottom-left-radius: 4px; }
 .lux-busy { opacity: .6; font-style: italic; }
 .lux-form { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #e4ebe4; }
 .lux-form input { flex: 1; border: 1px solid #dbe4dc; border-radius: 8px; padding: 9px 10px; font-size: 13px; }
@@ -471,8 +471,8 @@ a.servizio-card:hover { border-color: var(--forest); }
 @media(prefers-reduced-motion:reduce){#luxMascot{will-change:auto}}
 
 /* Chat concierge pubblica */
-.assistant{position:fixed!important;right:14px;bottom:14px;z-index:60;width:400px;max-width:calc(100vw - 24px);width:min(400px,calc(100vw - 24px))!important;height:78vh;max-height:560px;height:min(560px,78vh);background:#fdfbf6;border:1px solid #e0dbc9;border-radius:18px;box-shadow:0 16px 50px rgba(27,41,27,.22);display:flex;flex-direction:column;overflow:hidden;font-family:Arial,sans-serif}
-.assistant[hidden]{display:none!important}
+#assistant{position:fixed!important;right:14px;bottom:14px;z-index:60;width:400px;max-width:calc(100vw - 24px);width:min(400px,calc(100vw - 24px))!important;height:78vh;max-height:560px;height:min(560px,78vh);background:#fdfbf6;border:1px solid #e0dbc9;border-radius:18px;box-shadow:0 16px 50px rgba(27,41,27,.22);display:flex;flex-direction:column;overflow:hidden;font-family:Arial,sans-serif}
+#assistant[hidden]{display:none!important}
 .chat-header{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#26382f;color:#f5ecda;flex-shrink:0}
 .chat-header h2{margin:0;font:16px Georgia,serif;letter-spacing:.04em}
 .chat-header h2 span{color:#d9bc77}
@@ -493,8 +493,8 @@ body.listening .chat-mini-avatar{box-shadow:0 0 0 5px rgba(213,186,125,.27);anim
 .movement-toggle:hover{background:#ece7d8}
 .send-button{width:33px;height:33px;border:0;border-radius:50%;background:#26382f;color:#fff;font-size:18px;flex-shrink:0;cursor:pointer}
 .send-button:disabled{opacity:.5;cursor:default}
-.lux-msg.assistant{background:#ebe7dc;border:1px solid #e0dbc9;color:#2b2a22}
-@media(max-width:640px){.assistant{right:0;bottom:0;width:100%;height:82vh;max-height:none;border-radius:18px 18px 0 0}}
+.lux-msg.lux{background:#ebe7dc;border:1px solid #e0dbc9;color:#2b2a22}
+@media(max-width:640px){#assistant{right:0;bottom:0;width:100%;height:82vh;max-height:none;border-radius:18px 18px 0 0}}
 
 /* Dialoghi (foto, microfono) */
 .lux-dialog{border:1px solid #d2c7b1;border-radius:16px;background:#fdfbf6;padding:20px;max-width:min(480px,92vw);box-shadow:0 20px 60px rgba(27,41,27,.35);font-family:Arial,sans-serif;color:#2b2a22}

@@ -218,9 +218,9 @@ export default function LuxAssistant({ pubblica = false }: { pubblica?: boolean 
                 </div>
               )}
               {msgs.map((m, i) => (
-                <div key={i} className={`lux-msg ${m.role}`}>{m.content}</div>
+                <div key={i} className={`lux-msg ${m.role === 'assistant' ? 'lux' : m.role}`}>{m.content}</div>
               ))}
-              {busy && <div className="lux-msg assistant lux-busy">LUX sta scrivendo…</div>}
+              {busy && <div className="lux-msg lux lux-busy">LUX sta scrivendo…</div>}
             </div>
             <form className="lux-form" onSubmit={e => { e.preventDefault(); send(); }}>
               <button type="button" className="icon-button" onClick={micClick} aria-label="Parla con LUX">♩</button>
@@ -267,12 +267,12 @@ export default function LuxAssistant({ pubblica = false }: { pubblica?: boolean 
             </div>
           )}
           {msgs.map((m, i) => (
-            <div key={i} className={`lux-msg ${m.role}`}>
+            <div key={i} className={`lux-msg ${m.role === 'assistant' ? 'lux' : m.role}`}>
               {m.photo && <img className="lux-msg-photo" src={m.photo} alt="La tua foto per i consigli di look" />}
               {m.content.replace(/\*\*/g, '')}
             </div>
           ))}
-          {busy && <div className="lux-msg assistant lux-busy">LUX sta scrivendo…</div>}
+          {busy && <div className="lux-msg lux lux-busy">LUX sta scrivendo…</div>}
         </div>
         <form id="chatForm" className="lux-form" onSubmit={e => { e.preventDefault(); send(); }}>
           <button type="button" id="photoButton" className="icon-button" aria-label="Carica o scatta una foto" onClick={() => window.LUXPhoto?.open()}>＋</button>
