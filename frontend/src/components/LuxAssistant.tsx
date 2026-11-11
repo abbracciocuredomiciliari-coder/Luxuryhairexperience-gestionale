@@ -134,6 +134,7 @@ export default function LuxAssistant({ pubblica = false }: { pubblica?: boolean 
     setOpen(true);
     document.body.classList.add('lux-chat-open');
     document.getElementById('mascotOpen')?.setAttribute('aria-expanded', 'true');
+    speak(pubblica ? 'Piacere, sono Lux, la tua beauty concierge. Dimmi pure.' : 'Ciao, sono Lux. Dimmi cosa ti serve nel gestionale.');
   };
   const closeChat = () => {
     setOpen(false);
@@ -142,6 +143,29 @@ export default function LuxAssistant({ pubblica = false }: { pubblica?: boolean 
     stopSpeech();
     recognitionRef.current?.abort();
   };
+
+  // Gestionale: mascotte 3D ferma in basso a destra (senza girovagare)
+  useEffect(() => {
+    if (pubblica || !on) return;
+    loadScript('/lux/lux-3d.js', true);
+  }, [on, pubblica]);
+
+  // Gestionale: Esc o tocco fuori chiudono il pannello
+  useEffect(() => {
+    if (pubblica || !open) return;
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !document.querySelector('dialog[open]')) { setOpen(false); stopSpeech(); }
+    };
+    const outside = (e: Event) => {
+      const t = e.target as HTMLElement;
+      if (document.querySelector('dialog[open]')) return;
+      if (!t.closest('.lux-panel') && !t.closest('#luxMascot')) { setOpen(false); stopSpeech(); }
+    };
+    document.addEventListener('keydown', h);
+    document.addEventListener('pointerdown', outside, true);
+    return () => { document.removeEventListener('keydown', h); document.removeEventListener('pointerdown', outside, true); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, pubblica]);
 
   // Pubblico: bridge window.LUX + script mascotte/foto (caricati una sola volta)
   useEffect(() => {
@@ -203,9 +227,13 @@ export default function LuxAssistant({ pubblica = false }: { pubblica?: boolean 
   if (!pubblica) {
     return (
       <>
-        <button className="lux-fab" onClick={() => setOpen(o => !o)} aria-label="Apri assistente LUX" aria-expanded={open}>
-          ✦ LUX
-        </button>
+        <div id="luxMascot">
+          <button id="mascotOpen" onClick={openChat} aria-label="Apri la chat con LUX" aria-expanded={open} title="Tocca LUX per parlare">
+            <canvas id="lux3d" aria-hidden="true"></canvas>
+            <span id="lux3dFallback" aria-hidden="true">✦</span>
+          </button>
+          <button id="luxGreeting" className="lux-greeting" type="button" hidden={open} onClick={openChat}>Sono LUX</button>
+        </div>
         {open && (
           <div className="lux-panel" role="dialog" aria-label="Assistente LUX">
             <div className="lux-head">
