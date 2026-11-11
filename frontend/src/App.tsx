@@ -88,8 +88,16 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function PublicLux() {
+  const loc = useLocation();
+  if (loc.pathname.startsWith('/gestionale')) return null;
+  return <LuxAssistant pubblica />;
+}
+
 export default function App() {
   return (
+    <>
+    <PublicLux />
     <Routes>
       {/* Sito pubblico: vetrina, prenotazioni, shop, cartella cliente */}
       <Route path="/" element={<Home />} />
@@ -114,5 +122,6 @@ export default function App() {
       <Route path="/gestionale/operatori" element={<Shell><Operatori /></Shell>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

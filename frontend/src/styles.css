@@ -451,3 +451,4 @@ a.servizio-card:hover { border-color: var(--forest); }
 @media (max-width: 640px) {
   .lux-panel { right: 0; bottom: 0; width: 100%; height: 82vh; border-radius: 16px 16px 0 0; }
 }
+.lux-fab.pub { background: linear-gradient(135deg, #c9a24b, #e3c878); color: #221a08; }
