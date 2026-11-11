@@ -35,12 +35,14 @@ export default function LuxAssistant({ pubblica = false }: { pubblica?: boolean 
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
-  const [voice, setVoice] = useState(false);
+  const [voice, setVoice] = useState(() => {
+    try { return localStorage.getItem('lux-voice') !== '0'; } catch { return true; }
+  });
   const [listening, setListening] = useState(false);
   const [micConsent, setMicConsent] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const recognitionRef = useRef<any>(null);
-  const voiceRef = useRef(false);
+  const voiceRef = useRef(voice);
   const sendRef = useRef<(t?: string) => void>(() => {});
 
   const endpoint = pubblica ? '/lux/public-chat' : '/lux/chat';
@@ -192,8 +194,9 @@ export default function LuxAssistant({ pubblica = false }: { pubblica?: boolean 
     if (!('speechSynthesis' in window)) { setVStatus('La voce non è disponibile in questo browser.'); return; }
     const nv = !voice;
     setVoice(nv); voiceRef.current = nv;
+    try { localStorage.setItem('lux-voice', nv ? '1' : '0'); } catch { /* noop */ }
     if (nv) { setVStatus('Voce attiva.'); speak(pubblica ? 'Piacere, sono Lux. Sono qui per accompagnarti nella tua esperienza Luxury.' : 'Ciao, sono LUX, la tua assistente del gestionale.'); }
-    else { stopSpeech(); setVStatus('Voce disattivata.'); }
+    else { stopSpeech(); setVStatus('Voce sospesa.'); }
   };
 
   /* ── Variante gestionale: pannello chat staff ── */
