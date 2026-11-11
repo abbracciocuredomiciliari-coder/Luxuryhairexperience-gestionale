@@ -169,14 +169,20 @@ export default function LuxAssistant({ pubblica = false }: { pubblica?: boolean 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [on, pubblica]);
 
-  // Esc chiude la chat (pubblico)
+  // Esc o tocco fuori chiudono la chat (pubblico)
   useEffect(() => {
-    if (!pubblica) return;
+    if (!pubblica || !open) return;
     const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !document.querySelector('dialog[open]') && open) closeChat();
+      if (e.key === 'Escape' && !document.querySelector('dialog[open]')) closeChat();
+    };
+    const outside = (e: Event) => {
+      const t = e.target as HTMLElement;
+      if (document.querySelector('dialog[open]')) return;
+      if (!t.closest('#assistant') && !t.closest('#luxMascot')) closeChat();
     };
     document.addEventListener('keydown', h);
-    return () => document.removeEventListener('keydown', h);
+    document.addEventListener('pointerdown', outside, true);
+    return () => { document.removeEventListener('keydown', h); document.removeEventListener('pointerdown', outside, true); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, pubblica]);
 
@@ -263,7 +269,7 @@ export default function LuxAssistant({ pubblica = false }: { pubblica?: boolean 
           {msgs.map((m, i) => (
             <div key={i} className={`lux-msg ${m.role}`}>
               {m.photo && <img className="lux-msg-photo" src={m.photo} alt="La tua foto per i consigli di look" />}
-              {m.content}
+              {m.content.replace(/\*\*/g, '')}
             </div>
           ))}
           {busy && <div className="lux-msg assistant lux-busy">LUX sta scrivendo…</div>}
