@@ -37,7 +37,7 @@ const fotoArticolo = (p: any) => {
 };
 
 // ── Galleria lavori (port di gallery.js): un lavoro alla volta, precedente/successivo,
-// contatore, tastiera, swipe, niente autoplay, video fermato a ogni cambio/chiusura ──
+// contatore, tastiera, swipe, autoplay muto a ogni cambio, video fermato alla chiusura ──
 function GalleryModal({ kind, onClose }: { kind: 'video' | 'image'; onClose: () => void }) {
   const items = MEDIA.filter(m => m.role === 'gallery' && m.kind === kind);
   const [at, setAt] = useState(0);
@@ -80,7 +80,7 @@ function GalleryModal({ kind, onClose }: { kind: 'video' | 'image'; onClose: () 
             if (Math.abs(dx) > 60) next(dx < 0 ? 1 : -1);
           }}>
           {!m && <p>Nuovi lavori in arrivo.</p>}
-          {m?.kind === 'video' && <video key={m.id} src={m.url} poster={(m as any).poster} controls playsInline preload="metadata" />}
+          {m?.kind === 'video' && <video key={m.id} src={m.url} poster={(m as any).poster} controls autoPlay muted playsInline preload="metadata" />}
           {m?.kind === 'image' && <img key={m.id} src={m.url} alt={m.caption || 'Lavoro Luxury'} />}
         </div>
         <p className="viewer-caption">{m?.caption || ''}</p>
