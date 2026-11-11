@@ -13,7 +13,7 @@ const SUGGESTED_STAFF = [
 const SUGGESTED_PUB = [
   'Quali servizi fate?',
   'Vorrei prenotare un appuntamento',
-  'Consigli per il mio look',
+  'Consigli per il mio look 📷',
   'Che prodotti vendete in boutique?',
 ];
 
@@ -78,9 +78,16 @@ export default function LuxAssistant({ pubblica = false }: { pubblica?: boolean 
     speechSynthesis.speak(u);
   };
 
+  const openPhoto = () => {
+    if (window.LUXPhoto) window.LUXPhoto.open();
+    else setMsgs(m => [...m, { role: 'assistant', content: 'Il percorso foto non è ancora pronto, ricarica la pagina e riprova.' }]);
+  };
+
   const send = async (t?: string) => {
     const q = (t ?? text).trim();
     if (!q || busy) return;
+    // Richiesta look/foto → si apre il percorso foto (come nella demo)
+    if (pubblica && /foto|selfie|look/i.test(q) && !/senza foto|dimmi|racconta|spiega/i.test(q)) { setText(''); openPhoto(); return; }
     stopSpeech();
     setText('');
     const next: Msg[] = [...msgs, { role: 'user', content: q }];
@@ -249,6 +256,7 @@ export default function LuxAssistant({ pubblica = false }: { pubblica?: boolean 
           {!msgs.length && (
             <div className="lux-welcome">
               <p>Piacere, sono <b>LUX</b> ✦ la tua beauty concierge. Ti aiuto a scegliere un servizio, esplorare un look o prenotare il tuo momento Luxury.</p>
+              <button className="lux-photo-cta" onClick={openPhoto}>📷 Il mio look da una foto — scatta o carica</button>
               {suggested.map(s => <button key={s} onClick={() => send(s)}>{s}</button>)}
             </div>
           )}

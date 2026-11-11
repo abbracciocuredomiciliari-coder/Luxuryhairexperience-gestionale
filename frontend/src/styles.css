@@ -521,3 +521,5 @@ body.listening .chat-mini-avatar{box-shadow:0 0 0 5px rgba(213,186,125,.27);anim
 .small-dialog h2{font-size:24px;margin:15px 0 8px;font-family:Georgia,serif}
 .small-dialog>p{font-size:12px}
 .small-dialog .primary{background:#26382f;color:#f5ecda;border:0;border-radius:4px;padding:11px 18px;font-size:12px;cursor:pointer;margin-top:8px}
+.lux-photo-cta{display:block;width:100%;text-align:left;margin-bottom:8px;border:1.5px solid #c9a24b!important;border-radius:8px;padding:10px 12px;background:#fbf6e8!important;font-size:12px;cursor:pointer;color:#5a4a1e!important;font-weight:700}
+.lux-photo-cta:hover{background:#f5ecd4!important}
