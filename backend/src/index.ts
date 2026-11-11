@@ -16,6 +16,7 @@ import supplierRoutes from './routes/suppliers';
 import consultationRoutes from './routes/consultations';
 import commercialistaRoutes from './routes/commercialista';
 import backupRoutes from './routes/backup';
+import luxRoutes from './routes/lux';
 
 const app = express();
 const PORT = Number(process.env.PORT || 4100);
@@ -40,6 +41,7 @@ app.use('/api/suppliers', supplierRoutes);
 app.use('/api/consultations', consultationRoutes);
 app.use('/api/commercialista', commercialistaRoutes);
 app.use('/api/backup', backupRoutes);
+app.use('/api/lux', luxRoutes);
 
 connectDB()
   .then(() => app.listen(PORT, () => console.log(`API Luxury Gestionale su porta ${PORT}`)))

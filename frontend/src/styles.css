@@ -405,3 +405,49 @@ a.servizio-card:hover { border-color: var(--forest); }
   .formgrid, .twocol, .grid2, .vendita-grid { grid-template-columns: 1fr; }
   .navsez { display: none; }
 }
+
+/* ── LUX · assistente AI del gestionale ── */
+.lux-fab {
+  position: fixed; right: 18px; bottom: 18px; z-index: 90;
+  border: none; border-radius: 999px; padding: 12px 20px;
+  background: linear-gradient(135deg, #294935, #3d6b4c); color: #f5ecd7;
+  font-weight: 700; font-size: 14px; letter-spacing: .06em; cursor: pointer;
+  box-shadow: 0 8px 24px rgba(20, 40, 28, .35);
+}
+.lux-fab:hover { transform: translateY(-1px); }
+.lux-panel {
+  position: fixed; right: 18px; bottom: 70px; z-index: 95;
+  width: min(380px, calc(100vw - 24px)); height: min(520px, 76vh);
+  background: #fff; border: 1px solid #dbe4dc; border-radius: 16px;
+  box-shadow: 0 16px 50px rgba(20, 40, 28, .25);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.lux-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px; background: #294935; color: #f5ecd7;
+}
+.lux-head b { font-size: 15px; letter-spacing: .08em; }
+.lux-head small { display: block; font-size: 11px; opacity: .8; }
+.lux-head button { background: none; border: none; color: #f5ecd7; font-size: 17px; cursor: pointer; padding: 4px 8px; }
+.lux-msgs { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.lux-welcome p { font-size: 13px; color: #294935; margin: 4px 0 10px; }
+.lux-welcome button {
+  display: block; width: 100%; text-align: left; margin-bottom: 6px;
+  border: 1px solid #dbe4dc; border-radius: 8px; padding: 8px 10px;
+  background: #f7faf7; font-size: 12px; cursor: pointer; color: #294935;
+}
+.lux-welcome button:hover { background: #eef4ee; }
+.lux-msg { max-width: 85%; padding: 9px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; }
+.lux-msg.user { align-self: flex-end; background: #294935; color: #fff; border-bottom-right-radius: 4px; }
+.lux-msg.assistant { align-self: flex-start; background: #f0f4f0; color: #22352a; border-bottom-left-radius: 4px; }
+.lux-busy { opacity: .6; font-style: italic; }
+.lux-form { display: flex; gap: 8px; padding: 10px; border-top: 1px solid #e4ebe4; }
+.lux-form input { flex: 1; border: 1px solid #dbe4dc; border-radius: 8px; padding: 9px 10px; font-size: 13px; }
+.lux-form button {
+  border: none; border-radius: 8px; padding: 9px 14px; cursor: pointer;
+  background: #294935; color: #f5ecd7; font-size: 14px;
+}
+.lux-form button:disabled { opacity: .5; cursor: default; }
+@media (max-width: 640px) {
+  .lux-panel { right: 0; bottom: 0; width: 100%; height: 82vh; border-radius: 16px 16px 0 0; }
+}

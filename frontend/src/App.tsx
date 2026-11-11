@@ -18,6 +18,7 @@ import PrenotaPage from './pages/PrenotaPage';
 import CartellaPubblica from './pages/CartellaPubblica';
 import Shop from './pages/Shop';
 import Home from './pages/Home';
+import LuxAssistant from './components/LuxAssistant';
 
 const NAV: { sez?: string; to?: string; label?: string; icon?: string; soloAdmin?: boolean }[] = [
   { sez: 'Salone' },
@@ -82,6 +83,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
         {children}
       </main>
+      <LuxAssistant />
     </div>
   );
 }
